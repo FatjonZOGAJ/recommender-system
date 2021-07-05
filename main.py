@@ -1,3 +1,6 @@
+import myfm
+from sklearn.preprocessing import OneHotEncoder
+
 import lib.models as models
 from lib.utils import utils
 from lib.utils.config import config
@@ -59,6 +62,48 @@ def main():
 
     logger.info(f'Using {config.MODEL} model for prediction')
     model = models.models[config.MODEL].get_model(config)
+
+#def test_myfm(df_train, df_test, rank=8, grouping=None, n_iter=100, samples=95):
+    rank=8
+    grouping=None
+    n_iter=100
+    samples=95
+    explanation_columns = ["user_id", "movie_id"]
+    ohe = OneHotEncoder(handle_unknown="ignore")
+    X_train = ohe.fit_transform(pd.DataFrame([train_users, train_movies]))
+    X_test = ohe.transform(pd.DataFrame([test_users, test_movies]))
+    y_train = train_predictions
+    y_test = test_predictions
+    fm = myfm.MyFMRegressor(rank=rank, random_seed=114514)
+
+    if grouping:
+        # specify how columns of X_train are grouped
+        group_shapes = [len(category) for category in ohe.categories_]
+        assert sum(group_shapes) == X_train.shape[1]
+    else:
+        group_shapes = None
+
+    fm.fit(
+        X_train,
+        y_train,
+        group_shapes=group_shapes,
+        n_iter=n_iter,
+        n_kept_samples=samples,
+    )
+    prediction = fm.predict(X_test)
+    rmse = ((y_test - prediction) ** 2).mean() ** 0.5
+    mae = np.abs(y_test - prediction).mean()
+    print("rmse={rmse}, mae={mae}".format(rmse=rmse, mae=mae))
+    return fm
+
+
+    # basic regression
+    test_myfm(df_train, df_test, rank=8)
+    # rmse=0.90321, mae=0.71164
+
+    # with grouping
+    #fm = test_myfm(df_train, df_test, rank=8, grouping=True)
+    # rmse=0.89594, mae=0.70481
 
     predictions = model.predict(data, test_movies, test_users)
     print("RMSE using SVD is: {:.4f}".format(get_score(predictions, target_values=test_predictions)))
