@@ -17,7 +17,7 @@ class SVD:
         S[:k_singular_values, :k_singular_values] = np.diag(s[:k_singular_values])
         reconstructed_matrix = U.dot(S).dot(Vt)
 
-        predictions = extract_prediction_from_full_matrix(reconstructed_matrix, users=test_users, movies=test_movies)
+        predictions = extract_prediction_from_full_matrix(reconstructed_matrix, users=test_users, movies=test_movies, save_submission=True)
         return predictions
 
 

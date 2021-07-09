@@ -6,6 +6,9 @@ config.NUM_USERS, config.NUM_MOVIES = (10000, 1000)
 config.RANDOM_STATE = 42
 
 config.OUTPUT_DIR = 'output'
+config.FINAL_OUTPUT_DIR = ''
+config.SUBMISSION_NAME = ''
+config.TIME_STR = ''
 config.DATA_DIR = 'data/'
 config.TRAIN_SIZE = 0.9
 
@@ -32,7 +35,6 @@ def _update_dict(k, v):
 
 
 def update_config(config_file):
-    exp_config = None
     with open(config_file) as f:
         exp_config = edict(yaml.load(f))
         for k, v in exp_config.items():

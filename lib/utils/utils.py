@@ -24,6 +24,9 @@ def init(seed=42):
     reset_config(config, args)
 
     logger, final_output_dir, time_str = create_logger(config, args.cfg, None, 'train')
+    config.FINAL_OUTPUT_DIR = final_output_dir
+    config.TIME_STR = time_str
+    config.SUBMISSION_NAME = f'{final_output_dir}/submission_{time_str}.csv'
     logger.info(pprint.pformat(args))
     logger.info(pprint.pformat(config))
     return logger
