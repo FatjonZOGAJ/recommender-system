@@ -1,4 +1,3 @@
-# Adapted from Machine Perception course
 import yaml as yaml
 from easydict import EasyDict as edict
 
@@ -7,7 +6,7 @@ config.NUM_USERS, config.NUM_MOVIES = (10000, 1000)
 config.RANDOM_STATE = 42
 
 config.OUTPUT_DIR = 'output'
-config.DATA_DIR = 'notebooks/'
+config.DATA_DIR = 'data/'
 config.TRAIN_SIZE = 0.9
 
 config.MODEL = 'svd'
