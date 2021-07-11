@@ -12,10 +12,13 @@ def read_data():
     print()
     print('Shape', data_pd.shape)
 
-    train_pd, val_pd = train_test_split(data_pd, train_size=config.TRAIN_SIZE, random_state=config.RANDOM_STATE)
-
     test_pd = pd.read_csv(f'{data_directory}/sampleSubmission.csv')
-    return train_pd, val_pd, test_pd
+
+    if config.VALIDATE:
+        train_pd, val_pd = train_test_split(data_pd, train_size=config.TRAIN_SIZE, random_state=config.RANDOM_STATE)
+        return train_pd, val_pd, test_pd
+    else:
+        return data_pd, test_pd
 
 
 def extract_users_items_predictions(data_pd):

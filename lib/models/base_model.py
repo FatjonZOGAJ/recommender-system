@@ -7,5 +7,5 @@ class BaseModel(ABC):
         pass
 
     @abstractmethod
-    def predict(self, test_movies, test_users, save_submission=True):
+    def predict(self, test_movies, test_users, save_submission):
         pass

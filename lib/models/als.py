@@ -1,12 +1,14 @@
-import numpy as np
 import pandas as pd
+import numpy as np
+
+from lib.models.base_model import BaseModel
+from sklearn.decomposition import non_negative_factorization
 
 from lib.utils.config import config
-from lib.models.base_model import BaseModel
 from lib.utils.loader import create_matrices
 
 
-class SVD(BaseModel):
+class ALS(BaseModel):
     def __init__(self, number_of_users, number_of_movies):
         self.num_users = number_of_users
         self.num_movies = number_of_movies
@@ -15,13 +17,8 @@ class SVD(BaseModel):
         # create full matrix of observed and unobserved values
         data, mask = create_matrices(train_movies, train_users, train_predictions,
                                      default_replace=config.DEFAULT_VALUE)
-        k_singular_values = 2
-        number_of_singular_values = min(self.num_users, self.num_movies)
-        assert (k_singular_values <= number_of_singular_values), "choose correct number of singular values"
-        U, s, Vt = np.linalg.svd(data, full_matrices=False)
-        S = np.zeros((self.num_movies, self.num_movies))
-        S[:k_singular_values, :k_singular_values] = np.diag(s[:k_singular_values])
-        self.reconstructed_matrix = U.dot(S).dot(Vt)
+        W, H, _ = non_negative_factorization(data, verbose=True)
+        self.reconstructed_matrix = W @ H
 
     def predict(self, test_movies, test_users, save_submission):
         assert (len(test_users) == len(test_movies)), "users-movies combinations specified should have equal length"
@@ -44,4 +41,4 @@ class SVD(BaseModel):
 
 
 def get_model(config):
-    return SVD(config.NUM_USERS, config.NUM_MOVIES)
+    return ALS(config.NUM_USERS, config.NUM_MOVIES)

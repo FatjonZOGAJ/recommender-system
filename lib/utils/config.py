@@ -11,8 +11,9 @@ config.SUBMISSION_NAME = ''
 config.TIME_STR = ''
 config.DATA_DIR = 'data/'
 config.TRAIN_SIZE = 0.9
+config.VALIDATE = True
 
-config.MODEL = 'svd'
+config.MODEL = 'als'
 config.DEFAULT_VALUE = 'item_mean'
 
 
