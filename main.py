@@ -9,18 +9,18 @@ from lib.utils.loader import read_data, extract_users_items_predictions, create_
 def main():
     logger = utils.init(seed=config.RANDOM_STATE)
 
-    train_pd, test_pd = read_data()
+    train_pd, val_pd, test_pd = read_data()
     train_users, train_movies, train_predictions = extract_users_items_predictions(train_pd)
-    test_users, test_movies, test_predictions = extract_users_items_predictions(test_pd)
-
-    # create full matrix of observed and unobserved values
-    data, mask = create_matrices(train_movies, train_pd, train_predictions, train_users, default_replace=config.DEFAULT_VALUE)
+    val_users, val_movies, val_predictions = extract_users_items_predictions(val_pd)
+    test_users, test_movies, test_prediction = extract_users_items_predictions(test_pd)
 
     logger.info(f'Using {config.MODEL} model for prediction')
     model = models.models[config.MODEL].get_model(config)
-    model.fit(data)
-    predictions = model.predict(test_movies, test_users)
-    print("RMSE using SVD is: {:.4f}".format(get_score(predictions, target_values=test_predictions)))
+    model.fit(train_movies, train_users, train_predictions)
+    predictions = model.predict(val_movies, val_users, save_submission=False)
+    logger.info("RMSE using SVD is: {:.4f}".format(get_score(predictions, target_values=val_predictions)))
+    logger.info("Creating submission file")
+    model.predict(test_movies, test_users, save_submission=True)
 
 
 if __name__ == '__main__':
