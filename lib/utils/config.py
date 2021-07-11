@@ -13,6 +13,7 @@ config.DATA_DIR = 'data/'
 config.TRAIN_SIZE = 0.9
 
 config.MODEL = 'svd'
+config.DEFAULT_VALUE = 'mean'
 
 
 # saving config file

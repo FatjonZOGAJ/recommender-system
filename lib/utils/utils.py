@@ -1,5 +1,6 @@
 import argparse
 import logging
+import math
 import pprint
 import random
 import time
@@ -7,8 +8,11 @@ from pathlib import Path
 
 import numpy as np
 import torch
+from sklearn.metrics import mean_squared_error
 
 from lib.utils.config import config
+
+rmse = lambda x, y: math.sqrt(mean_squared_error(x, y))
 
 
 def init(seed=42):
@@ -78,3 +82,7 @@ def create_logger(cfg, cfg_name, time_str=None, phase='train'):
 def reset_config(config, args, valid=False):
     if args.cpu != -1:  # check for default values with -1
         config.CPU = bool(args.cpu)
+
+
+def get_score(predictions, target_values):
+    return rmse(predictions, target_values)
