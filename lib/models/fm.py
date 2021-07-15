@@ -40,13 +40,12 @@ class FM(BaseModel):
         )
 
     def predict(self, test_movies, test_users, save_submission):
-        index = [''] * len(test_users)
-
         df_train = pd.DataFrame({'user_id': test_users, 'movie_id': test_movies})
         X_test = self.ohe.transform(df_train[self.explanation_columns])
         predictions = self.fm.predict(X_test)
 
         if save_submission:
+            index = [''] * len(test_users)
             for i, (user, movie) in enumerate(zip(test_users, test_movies)):
                 index[i] = f"r{user + 1}_c{movie + 1}"
             submission = pd.DataFrame({'Id': index, 'Prediction': predictions})

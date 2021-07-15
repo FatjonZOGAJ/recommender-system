@@ -13,7 +13,7 @@ config.DATA_DIR = 'data/'
 config.TRAIN_SIZE = 0.9
 config.VALIDATE = False
 
-config.MODEL = 'fm'
+config.MODEL = 'fm_rel'
 config.DEFAULT_VALUE = 'item_mean'
 
 
