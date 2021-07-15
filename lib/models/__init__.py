@@ -1,5 +1,6 @@
-from lib.models import svd, als
+from lib.models import svd, als, fm
 
 models = {'svd': svd,
-          'als': als
+          'als': als,
+          'fm': fm
           }
