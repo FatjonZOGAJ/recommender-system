@@ -16,6 +16,9 @@ config.VALIDATE = True
 config.MODEL = 'fm_rel'
 config.DEFAULT_VALUE = 'item_mean'
 
+config.K_SINGULAR_VALUES = 3
+config.MAX_ITER = 2
+
 
 # saving config file
 def gen_config(config_file, config):
