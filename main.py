@@ -3,7 +3,7 @@ from lib.utils import utils
 from lib.utils.utils import get_score
 
 from lib.utils.config import config
-from lib.utils.loader import read_data, extract_users_items_predictions, create_matrices
+from lib.utils.loader import read_data, extract_users_items_predictions
 
 
 def main():
@@ -17,7 +17,9 @@ def main():
         val_users, val_movies, val_predictions = extract_users_items_predictions(val_pd)
         test_users, test_movies, test_prediction = extract_users_items_predictions(test_pd)
         model = models.models[config.MODEL].get_model(config)
+        logger.info("Fitting the model")
         model.fit(train_movies, train_users, train_predictions)
+        logger.info("Testing the model")
         predictions = model.predict(val_movies, val_users, save_submission=False)
         logger.info('RMSE using {} is {:.4f}'.format(
             config.MODEL, get_score(predictions, target_values=val_predictions)))
@@ -27,6 +29,7 @@ def main():
         train_users, train_movies, train_predictions = extract_users_items_predictions(train_pd)
         test_users, test_movies, test_prediction = extract_users_items_predictions(test_pd)
         model = models.models[config.MODEL].get_model(config)
+        logger.info("Fitting the model")
         model.fit(train_movies, train_users, train_predictions)
 
     logger.info("Creating submission file")

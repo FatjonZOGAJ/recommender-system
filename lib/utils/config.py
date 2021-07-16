@@ -11,7 +11,7 @@ config.SUBMISSION_NAME = ''
 config.TIME_STR = ''
 config.DATA_DIR = 'data/'
 config.TRAIN_SIZE = 0.9
-config.VALIDATE = False
+config.VALIDATE = True
 
 config.MODEL = 'fm_rel'
 config.DEFAULT_VALUE = 'item_mean'
