@@ -17,7 +17,7 @@ class ALS(BaseModel):
         # create full matrix of observed and unobserved values
         data, mask = create_matrices(train_movies, train_users, train_predictions,
                                      default_replace=config.DEFAULT_VALUE)
-        W, H, _ = non_negative_factorization(data, verbose=True)
+        W, H, _ = non_negative_factorization(data, verbose=True, max_iter=config.MAX_ITER)
         self.reconstructed_matrix = W @ H
 
     def predict(self, test_movies, test_users, save_submission):

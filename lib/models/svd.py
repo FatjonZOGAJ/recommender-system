@@ -15,7 +15,7 @@ class SVD(BaseModel):
         # create full matrix of observed and unobserved values
         data, mask = create_matrices(train_movies, train_users, train_predictions,
                                      default_replace=config.DEFAULT_VALUE)
-        k_singular_values = 2
+        k_singular_values = config.K_SINGULAR_VALUES
         number_of_singular_values = min(self.num_users, self.num_movies)
         assert (k_singular_values <= number_of_singular_values), "choose correct number of singular values"
         U, s, Vt = np.linalg.svd(data, full_matrices=False)
