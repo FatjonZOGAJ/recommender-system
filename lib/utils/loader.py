@@ -8,6 +8,8 @@ from lib.utils.config import config
 def read_data():
     data_directory = config.DATA_DIR
     data_pd = pd.read_csv(f'{data_directory}/data_train.csv')
+    movies, users, predictions = extract_users_items_predictions(data_pd)  # TODO: can be rewritten
+    data_pd['users'], data_pd['movies'] = users, movies
     print(data_pd.head(5))
     print()
     print('Shape', data_pd.shape)
@@ -15,7 +17,8 @@ def read_data():
     test_pd = pd.read_csv(f'{data_directory}/sampleSubmission.csv')
 
     if config.VALIDATE:
-        train_pd, val_pd = train_test_split(data_pd, train_size=config.TRAIN_SIZE, random_state=config.RANDOM_STATE)
+        train_pd, val_pd = train_test_split(data_pd, train_size=config.TRAIN_SIZE, random_state=config.RANDOM_STATE,
+                                            stratify=data_pd[config.STRATIFY])
         return train_pd, val_pd, test_pd
     else:
         return data_pd, test_pd
@@ -44,10 +47,16 @@ def create_matrices(train_movies, train_users, train_predictions, default_replac
     elif default_replace == 'user_mean':
         for i in range(0, config.NUM_USERS):
             mean_of_i_row = np.mean(data[i, :][mask[i, :] == 1])
+            # if no value for a user (e.g. in validation split) TODO: more sophisticated
+            if np.isnan(mean_of_i_row):
+                mean_of_i_row = np.mean(train_predictions)
             data[i, mask[i, :] == 0] = mean_of_i_row
     elif default_replace == 'item_mean':
         for i in range(0, config.NUM_MOVIES):
             mean_of_i_col = np.mean(data[:, i][mask[:, i] == 1])
+            # if no value for a movie (e.g. in validation split) TODO: more sophisticated
+            if np.isnan(mean_of_i_col):
+                mean_of_i_col = np.mean(train_predictions)
             data[mask[:, i] == 0, i] = mean_of_i_col
     else:
         raise NotImplementedError('Add other replacement methods')

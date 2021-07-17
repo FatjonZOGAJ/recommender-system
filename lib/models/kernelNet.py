@@ -18,7 +18,7 @@ from lib.utils.config import config
 # TODO: add to params
 from lib.utils.loader import create_matrices
 
-TESTING = False
+TESTING = True
 
 params = edict()
 params.HIDDEN_UNITS = 500
@@ -112,16 +112,15 @@ class KernelNet(BaseModel):
         y = activation(y)
         return y, sparse_reg_term + l2_reg_term
 
-    def fit(self, train_movies, train_users, train_predictions):
-        # TODO: better?
-        data = np.full((config.NUM_USERS, config.NUM_MOVIES), 0, dtype=float).transpose()
-        mask = np.zeros((config.NUM_USERS, config.NUM_MOVIES)).transpose()
-        for user, movie, pred in zip(train_users, train_movies, train_predictions):
-            data[movie][user] = pred
-            mask[movie][user] = 1
-        # data, mask = create_matrices(train_movies, train_users, train_predictions,
-        #                              default_replace=config.DEFAULT_VALUE)
-        # data, mask = data.T, mask.T  # NOTE transpose
+    def fit(self, train_movies, train_users, train_predictions, **kwargs):  # , val_movies, val_users, val_predictions):
+        val_movies, val_users, val_predictions = [kwargs[k] for k in ['val_movies', 'val_users', 'val_predictions']]
+        # TODO: zero better?
+        data, mask = create_matrices(train_movies, train_users, train_predictions,
+                                     default_replace=config.DEFAULT_VALUE)
+        data, mask = data.T, mask.T  # NOTE transpose
+        data_val, mask_val = create_matrices(val_movies, val_users, val_predictions,
+                                             default_replace=config.DEFAULT_VALUE)
+        data_val, mask_val = data_val.T, mask_val.T  # NOTE transpose
 
         self.fit_init(mask)
 
@@ -133,12 +132,11 @@ class KernelNet(BaseModel):
                 self.optimizer.minimize(sess, feed_dict={self.R: data})  # do maxiter optimization steps
                 pre = sess.run(self.prediction, feed_dict={self.R: data})  # predict ratings
 
-                error = 0  # (vm * (np.clip(pre, 1., 5.) - vr) ** 2).sum() / vm.sum()  # compute validation error
-                error_train = (mask * (
-                        np.clip(pre, 1., 5.) - data) ** 2).sum() / mask.sum()  # compute train error
+                error_val = (mask_val * (np.clip(pre, 1., 5.) - data_val) ** 2).sum() / mask_val.sum()
+                error_train = (mask * (np.clip(pre, 1., 5.) - data) ** 2).sum() / mask.sum()
 
                 print('.-^-._' * 12)
-                self.logger.info(f'epoch: {i}, validation rmse: {np.sqrt(error)} train rmse: {np.sqrt(error_train)}')
+                self.logger.info(f'epoch: {i}, validation rmse: {np.sqrt(error_val)} train rmse: {np.sqrt(error_train)}')
 
                 self.reconstructed_matrix = pre
 

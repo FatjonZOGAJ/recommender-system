@@ -18,7 +18,8 @@ def main():
         test_users, test_movies, test_prediction = extract_users_items_predictions(test_pd)
         model = models.models[config.MODEL].get_model(config, logger)
         logger.info("Fitting the model")
-        model.fit(train_movies, train_users, train_predictions)
+        model.fit(train_movies, train_users, train_predictions,
+                  val_movies=val_movies, val_users=val_users, val_predictions=val_predictions)  # iterative val score
         logger.info("Testing the model")
         predictions = model.predict(val_movies, val_users, save_submission=False)
         logger.info('RMSE using {} is {:.4f}'.format(
