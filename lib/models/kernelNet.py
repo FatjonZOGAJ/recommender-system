@@ -18,7 +18,7 @@ from lib.utils.config import config
 # TODO: add to params
 from lib.utils.loader import create_matrices
 
-TESTING = True
+TESTING = False
 
 params = edict()
 params.HIDDEN_UNITS = 500

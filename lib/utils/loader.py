@@ -37,7 +37,9 @@ def create_matrices(train_movies, train_users, train_predictions, default_replac
         data[user][movie] = pred
         mask[user][movie] = 1
 
-    if default_replace == 'mean':
+    if default_replace == 'zero':
+        pass
+    elif default_replace == 'mean':
         data[mask == 0] = np.mean(train_predictions)
     elif default_replace == 'user_mean':
         for i in range(0, config.NUM_USERS):
