@@ -16,19 +16,18 @@ from lib.models.base_model import BaseModel
 from lib.utils.config import config
 
 # TODO: add to params
+from lib.utils.loader import create_matrices
+
+TESTING = True
+
 params = edict()
 params.HIDDEN_UNITS = 500
 LAMBDA_2 = 60.  # float(sys.argv[1]) if len(sys.argv) > 1 else 60.
 LAMBDA_SPARSITY = 0.013  # float(sys.argv[2]) if len(sys.argv) > 2 else 0.013
 N_LAYERS = 2
-OUTPUT_EVERY = 50  # evaluate performance on test set; breaks l-bfgs loop
+OUTPUT_EVERY = 50 if not TESTING else 10  # evaluate performance on test set; breaks l-bfgs loop
 N_EPOCHS = N_LAYERS * 10 * OUTPUT_EVERY
 VERBOSE_BFGS = True
-
-
-# use_gpu = True
-# if not use_gpu:
-#     os.environ['CUDA_VISIBLE_DEVICES'] = ''
 
 
 class KernelNet(BaseModel):
@@ -113,55 +112,65 @@ class KernelNet(BaseModel):
         y = activation(y)
         return y, sparse_reg_term + l2_reg_term
 
-    # data must be
     def fit(self, train_movies, train_users, train_predictions):
-        # NOTE transposed
-        data_train = np.full((config.NUM_USERS, config.NUM_MOVIES), 0, dtype=float).transpose()
-        mask_train = np.zeros((config.NUM_USERS, config.NUM_MOVIES)).transpose()
+        # TODO: better?
+        data = np.full((config.NUM_USERS, config.NUM_MOVIES), 0, dtype=float).transpose()
+        mask = np.zeros((config.NUM_USERS, config.NUM_MOVIES)).transpose()
         for user, movie, pred in zip(train_users, train_movies, train_predictions):
-            data_train[movie][user] = pred
-            mask_train[movie][user] = 1
-        # data_train = pd.DataFrame({'user_id': train_users, 'movie_id': train_movies, 'rating': train_predictions})
-        # mask_train = data_train.mask(data_train != 0, 1).to_numpy()
-        # data_train = data_train.to_numpy()
+            data[movie][user] = pred
+            mask[movie][user] = 1
+        # data, mask = create_matrices(train_movies, train_users, train_predictions,
+        #                              default_replace=config.DEFAULT_VALUE)
+        # data, mask = data.T, mask.T  # NOTE transpose
 
-        #  TOOD maybe to ndarray
-        self.fit_init(mask_train)
+        self.fit_init(mask)
 
         # Training and validation loop
         init = tf.global_variables_initializer()
         with tf.Session() as sess:
             sess.run(init)
             for i in range(int(N_EPOCHS / OUTPUT_EVERY)):
-                self.optimizer.minimize(sess, feed_dict={self.R: data_train})  # do maxiter optimization steps
-                pre = sess.run(self.prediction, feed_dict={self.R: data_train})  # predict ratings
+                self.optimizer.minimize(sess, feed_dict={self.R: data})  # do maxiter optimization steps
+                pre = sess.run(self.prediction, feed_dict={self.R: data})  # predict ratings
 
                 error = 0  # (vm * (np.clip(pre, 1., 5.) - vr) ** 2).sum() / vm.sum()  # compute validation error
-                error_train = (mask_train * (
-                        np.clip(pre, 1., 5.) - data_train) ** 2).sum() / mask_train.sum()  # compute train error
+                error_train = (mask * (
+                        np.clip(pre, 1., 5.) - data) ** 2).sum() / mask.sum()  # compute train error
 
                 print('.-^-._' * 12)
                 print('epoch:', i, 'validation rmse:', np.sqrt(error), 'train rmse:', np.sqrt(error_train))
                 print('.-^-._' * 12)
+
+                self.reconstructed_matrix = pre
+
+                if i == 0 and TESTING:
+                    break
 
             with open('summary_ml1m.txt', 'a') as file:
                 for a in sys.argv[1:]:
                     file.write(a + ' ')
                 file.write(str(np.sqrt(error)) + ' ' + str(np.sqrt(error_train))
                            + ' ' + str(config.RANDOM_STATE) + '\n')
-                file.close()
+            file.close()
 
     def predict(self, test_movies, test_users, save_submission):
-        ...
-        df_train = pd.DataFrame({'user_id': test_users, 'movie_id': test_movies})
+        assert (len(test_users) == len(test_movies)), "users-movies combinations specified should have equal length"
+        return self._extract_prediction_from_full_matrix(self.reconstructed_matrix, users=test_users,
+                                                         movies=test_movies, save_submission=save_submission)
 
-        # if save_submission:
-        #     index = [''] * len(test_users)
-        #     for i, (user, movie) in enumerate(zip(test_users, test_movies)):
-        #         index[i] = f"r{user + 1}_c{movie + 1}"
-        #     submission = pd.DataFrame({'Id': index, 'Prediction': predictions})
-        #     submission.to_csv(config.SUBMISSION_NAME, index=False)
-        # return predictions
+    def _extract_prediction_from_full_matrix(self, reconstructed_matrix, users, movies, save_submission=True):
+        # returns predictions for the users-movies combinations specified based on a full m \times n matrix
+        predictions = np.zeros(len(users))
+        index = [''] * len(users)
+
+        for i, (user, movie) in enumerate(zip(users, movies)):
+            predictions[i] = reconstructed_matrix[movie][user]
+            index[i] = f"r{user + 1}_c{movie + 1}"
+
+        if save_submission:
+            submission = pd.DataFrame({'Id': index, 'Prediction': predictions})
+            submission.to_csv(config.SUBMISSION_NAME, index=False)
+        return predictions
 
 
 def get_model(config):
