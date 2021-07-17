@@ -18,7 +18,7 @@ class FM(BaseModel):
         self.explanation_columns = ['user_id', 'movie_id']
         self.fm = myfm.MyFMRegressor(rank=params.RANK, random_seed=69)
 
-    def fit(self, train_movies, train_users, train_predictions):
+    def fit(self, train_movies, train_users, train_predictions, **kwargs):
         df_train = pd.DataFrame({'user_id': train_users, 'movie_id': train_movies, 'rating': train_predictions})
         self.ohe = OneHotEncoder(handle_unknown="ignore")
         X_train = self.ohe.fit_transform(df_train[self.explanation_columns])

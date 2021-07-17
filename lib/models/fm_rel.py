@@ -17,7 +17,7 @@ params.USE_II = True  # use implicit item feature
 
 
 class FMRelational(BaseModel):
-    def fit(self, train_movies, train_users, train_predictions):
+    def fit(self, train_movies, train_users, train_predictions, **kwargs):
         self.df_train = pd.DataFrame({'user_id': train_users, 'movie_id': train_movies, 'rating': train_predictions})
         self.unique_user_ids = np.unique(self.df_train.user_id)
         self.unique_movie_ids = np.unique(self.df_train.movie_id)

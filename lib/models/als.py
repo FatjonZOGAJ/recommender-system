@@ -13,7 +13,7 @@ class ALS(BaseModel):
         self.num_users = number_of_users
         self.num_movies = number_of_movies
 
-    def fit(self, train_movies, train_users, train_predictions):
+    def fit(self, train_movies, train_users, train_predictions, **kwargs):
         # create full matrix of observed and unobserved values
         data, mask = create_matrices(train_movies, train_users, train_predictions,
                                      default_replace=config.DEFAULT_VALUE)
