@@ -40,5 +40,5 @@ class ALS(BaseModel):
         return predictions
 
 
-def get_model(config):
+def get_model(config, logger):
     return ALS(config.NUM_USERS, config.NUM_MOVIES)

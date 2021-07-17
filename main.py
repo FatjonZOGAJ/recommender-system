@@ -16,7 +16,7 @@ def main():
         train_users, train_movies, train_predictions = extract_users_items_predictions(train_pd)
         val_users, val_movies, val_predictions = extract_users_items_predictions(val_pd)
         test_users, test_movies, test_prediction = extract_users_items_predictions(test_pd)
-        model = models.models[config.MODEL].get_model(config)
+        model = models.models[config.MODEL].get_model(config, logger)
         logger.info("Fitting the model")
         model.fit(train_movies, train_users, train_predictions)
         logger.info("Testing the model")
@@ -28,7 +28,7 @@ def main():
         train_pd, test_pd = read_data()
         train_users, train_movies, train_predictions = extract_users_items_predictions(train_pd)
         test_users, test_movies, test_prediction = extract_users_items_predictions(test_pd)
-        model = models.models[config.MODEL].get_model(config)
+        model = models.models[config.MODEL].get_model(config, logger)
         logger.info("Fitting the model")
         model.fit(train_movies, train_users, train_predictions)
 

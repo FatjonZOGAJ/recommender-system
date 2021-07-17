@@ -25,14 +25,14 @@ params.HIDDEN_UNITS = 500
 LAMBDA_2 = 60.  # float(sys.argv[1]) if len(sys.argv) > 1 else 60.
 LAMBDA_SPARSITY = 0.013  # float(sys.argv[2]) if len(sys.argv) > 2 else 0.013
 N_LAYERS = 2
-OUTPUT_EVERY = 50 if not TESTING else 10  # evaluate performance on test set; breaks l-bfgs loop
+OUTPUT_EVERY = 50 if not TESTING else 5  # evaluate performance on test set; breaks l-bfgs loop
 N_EPOCHS = N_LAYERS * 10 * OUTPUT_EVERY
 VERBOSE_BFGS = True
 
 
 class KernelNet(BaseModel):
-    def __init__(self):
-        self.explanation_columns = ['user_id', 'movie_id']
+    def __init__(self, logger):
+        self.logger = logger
 
         # Input placeholders
         self.R = tf.placeholder("float", [None, config.NUM_USERS])
@@ -138,20 +138,12 @@ class KernelNet(BaseModel):
                         np.clip(pre, 1., 5.) - data) ** 2).sum() / mask.sum()  # compute train error
 
                 print('.-^-._' * 12)
-                print('epoch:', i, 'validation rmse:', np.sqrt(error), 'train rmse:', np.sqrt(error_train))
-                print('.-^-._' * 12)
+                self.logger.info(f'epoch: {i}, validation rmse: {np.sqrt(error)} train rmse: {np.sqrt(error_train)}')
 
                 self.reconstructed_matrix = pre
 
                 if i == 0 and TESTING:
                     break
-
-            with open('summary_ml1m.txt', 'a') as file:
-                for a in sys.argv[1:]:
-                    file.write(a + ' ')
-                file.write(str(np.sqrt(error)) + ' ' + str(np.sqrt(error_train))
-                           + ' ' + str(config.RANDOM_STATE) + '\n')
-            file.close()
 
     def predict(self, test_movies, test_users, save_submission):
         assert (len(test_users) == len(test_movies)), "users-movies combinations specified should have equal length"
@@ -173,5 +165,5 @@ class KernelNet(BaseModel):
         return predictions
 
 
-def get_model(config):
-    return KernelNet()
+def get_model(config, logger):
+    return KernelNet(logger)

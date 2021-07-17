@@ -53,5 +53,5 @@ class FM(BaseModel):
         return predictions
 
 
-def get_model(config):
+def get_model(config, logger):
     return FM()
