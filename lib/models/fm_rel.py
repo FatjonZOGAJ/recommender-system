@@ -14,11 +14,15 @@ params.N_ITER = 512  # does not work if not enough iterations
 params.GROUPING = True
 params.USE_IU = True  # use implicit user feature
 params.USE_II = True  # use implicit item feature
+params.ORDERED_PROBIT = True
 
 
 class FMRelational(BaseModel):
     def fit(self, train_movies, train_users, train_predictions, **kwargs):
         self.df_train = pd.DataFrame({'user_id': train_users, 'movie_id': train_movies, 'rating': train_predictions})
+        if params.ORDERED_PROBIT:
+            self.df_train.rating -= 1  # rating values are now [0, 1, 2, 3, 4]
+
         self.unique_user_ids = np.unique(self.df_train.user_id)
         self.unique_movie_ids = np.unique(self.df_train.movie_id)
         self.user_id_to_index = {uid: i for i, uid in enumerate(self.unique_user_ids)}
@@ -44,12 +48,20 @@ class FMRelational(BaseModel):
         # Create RelationBlock.
         train_blocks = self._create_relational_blocks(self.df_train)
 
-        self.fm = myfm.MyFMRegressor(rank=params.RANK)
-        self.fm.fit(
-            None, self.df_train.rating.values, X_rel=train_blocks,
-            group_shapes=feature_group_sizes,
-            n_iter=params.N_ITER
-        )
+        if not params.ORDERED_PROBIT:
+            self.fm = myfm.MyFMRegressor(rank=params.RANK)
+            self.fm.fit(
+                None, self.df_train.rating.values, X_rel=train_blocks,
+                group_shapes=feature_group_sizes,
+                n_iter=params.N_ITER
+            )
+        else:
+            self.fm = myfm.MyFMOrderedProbit(rank=params.RANK)
+            self.fm.fit(
+                None, self.df_train.rating.values, X_rel=train_blocks,
+                group_shapes=feature_group_sizes,
+                n_iter=params.N_ITER
+            )
 
     def predict(self, test_movies, test_users, save_submission):
         self.df_test = pd.DataFrame(
@@ -58,9 +70,13 @@ class FMRelational(BaseModel):
         # Create RelationBlock.
         test_blocks = self._create_relational_blocks(self.df_test)
 
-        predictions = self.fm.predict(None, test_blocks)
-        predictions[predictions >= 5] = 5
-        predictions[predictions <= 1] = 1
+        if not params.ORDERED_PROBIT:
+            predictions = self.fm.predict(None, test_blocks)
+            predictions[predictions >= 5] = 5
+            predictions[predictions <= 1] = 1
+        else:
+            predictions = self.fm.predict_proba(None, test_blocks)
+            predictions = predictions.dot(np.arange(1, 6))  # Calculated Expected Value over class probabilities. Rating values are now [1, 2, 3, 4, 5]
 
         if save_submission:
             index = [''] * len(test_users)
