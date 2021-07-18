@@ -11,9 +11,9 @@ config.SUBMISSION_NAME = ''
 config.TIME_STR = ''
 config.DATA_DIR = 'data/'
 config.TRAIN_SIZE = 0.9
-config.VALIDATE = True
+config.VALIDATE = False
 
-config.MODEL = 'kernelNet'
+config.MODEL = 'fm_rel'
 config.DEFAULT_VALUE = 'user_mean'
 config.STRATIFY = 'movies'  # or users
 

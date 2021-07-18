@@ -11,6 +11,7 @@ from lib.utils.config import config
 params = edict()
 params.RANK = 32
 params.N_ITER = 512  # does not work if not enough iterations
+params.SAMPLES = 100
 params.GROUPING = True
 params.USE_IU = True  # use implicit user feature
 params.USE_II = True  # use implicit item feature
@@ -53,14 +54,16 @@ class FMRelational(BaseModel):
             self.fm.fit(
                 None, self.df_train.rating.values, X_rel=train_blocks,
                 group_shapes=feature_group_sizes,
-                n_iter=params.N_ITER
+                n_iter=params.N_ITER,
+                n_kept_samples=params.SAMPLES
             )
         else:
             self.fm = myfm.MyFMOrderedProbit(rank=params.RANK)
             self.fm.fit(
                 None, self.df_train.rating.values, X_rel=train_blocks,
                 group_shapes=feature_group_sizes,
-                n_iter=params.N_ITER
+                n_iter=params.N_ITER,
+                n_kept_samples=None
             )
 
     def predict(self, test_movies, test_users, save_submission):
@@ -75,8 +78,14 @@ class FMRelational(BaseModel):
             predictions[predictions >= 5] = 5
             predictions[predictions <= 1] = 1
         else:
-            predictions = self.fm.predict_proba(None, test_blocks)
-            predictions = predictions.dot(np.arange(1, 6))  # Calculated Expected Value over class probabilities. Rating values are now [1, 2, 3, 4, 5]
+            # Workaround for bug
+            X = []
+            X.extend([rel.data[rel.original_to_block] for rel in test_blocks])
+            X_test = sparse.hstack(X, format='csr')
+
+            predictions = self.fm.predict_proba(X_test)
+            predictions = predictions.dot(np.arange(1,
+                                                    6))  # Calculated Expected Value over class probabilities. Rating values are now [1, 2, 3, 4, 5]
 
         if save_submission:
             index = [''] * len(test_users)
