@@ -33,31 +33,3 @@ def extract_users_items_predictions(data_pd):
     return users, movies, predictions
 
 
-def create_matrices(train_movies, train_users, train_predictions, default_replace='mean'):
-    data = np.full((config.NUM_USERS, config.NUM_MOVIES), 0, dtype=float)
-    mask = np.zeros((config.NUM_USERS, config.NUM_MOVIES))  # 0 -> unobserved value, 1->observed value
-    for user, movie, pred in zip(train_users, train_movies, train_predictions):
-        data[user][movie] = pred
-        mask[user][movie] = 1
-
-    if default_replace == 'zero':
-        pass
-    elif default_replace == 'mean':
-        data[mask == 0] = np.mean(train_predictions)
-    elif default_replace == 'user_mean':
-        for i in range(0, config.NUM_USERS):
-            mean_of_i_row = np.mean(data[i, :][mask[i, :] == 1])
-            # if no value for a user (e.g. in validation split) TODO: more sophisticated
-            if np.isnan(mean_of_i_row):
-                mean_of_i_row = np.mean(train_predictions)
-            data[i, mask[i, :] == 0] = mean_of_i_row
-    elif default_replace == 'item_mean':
-        for i in range(0, config.NUM_MOVIES):
-            mean_of_i_col = np.mean(data[:, i][mask[:, i] == 1])
-            # if no value for a movie (e.g. in validation split) TODO: more sophisticated
-            if np.isnan(mean_of_i_col):
-                mean_of_i_col = np.mean(train_predictions)
-            data[mask[:, i] == 0, i] = mean_of_i_col
-    else:
-        raise NotImplementedError('Add other replacement methods')
-    return data, mask

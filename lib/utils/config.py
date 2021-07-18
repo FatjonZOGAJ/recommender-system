@@ -14,12 +14,14 @@ config.TRAIN_SIZE = 0.9
 config.VALIDATE = False
 
 config.MODEL = 'fm_rel'
-config.DEFAULT_VALUE = 'user_mean'
+config.DEFAULT_VALUE = 'kernelNet'
+config.SECOND_DEFAULT_VALUE = 'zero'
 config.STRATIFY = 'movies'  # or users
 
 config.K_SINGULAR_VALUES = 3
 config.MAX_ITER = 2
 
+config.TEST_EVERY = 3
 
 # saving config file
 def gen_config(config_file, config):

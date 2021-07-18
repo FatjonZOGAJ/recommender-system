@@ -3,12 +3,8 @@ adapted from Lorenz Muller
 https://github.com/lorenzMuller/kernelNet_MovieLens/blob/master/kernelNet_ml1m.py
 '''
 import numpy as np
-import pandas as pd
 import tensorflow as tf
-from time import time
-import sys
 # from dataLoader import loadData
-import os
 
 from easydict import EasyDict as edict
 
@@ -16,23 +12,22 @@ from lib.models.base_model import BaseModel
 from lib.utils.config import config
 
 # TODO: add to params
-from lib.utils.loader import create_matrices
 
-TESTING = True
+TESTING = False
 
 params = edict()
 params.HIDDEN_UNITS = 500
-LAMBDA_2 = 60.  # float(sys.argv[1]) if len(sys.argv) > 1 else 60.
-LAMBDA_SPARSITY = 0.013  # float(sys.argv[2]) if len(sys.argv) > 2 else 0.013
+LAMBDA_2 = 90.
+LAMBDA_SPARSITY = 0.023
 N_LAYERS = 2
 OUTPUT_EVERY = 50 if not TESTING else 5  # evaluate performance on test set; breaks l-bfgs loop
-N_EPOCHS = N_LAYERS * 10 * OUTPUT_EVERY
-VERBOSE_BFGS = True
+N_EPOCHS = 3# N_LAYERS * 10
+VERBOSE_BFGS = False
 
 
 class KernelNet(BaseModel):
-    def __init__(self, logger):
-        self.logger = logger
+    def __init__(self, logger, is_initializer_model):
+        super().__init__(logger, is_initializer_model)
 
         # Input placeholders
         self.R = tf.placeholder("float", [None, config.NUM_USERS])
@@ -112,15 +107,20 @@ class KernelNet(BaseModel):
         y = activation(y)
         return y, sparse_reg_term + l2_reg_term
 
-    def fit(self, train_movies, train_users, train_predictions, **kwargs):  # , val_movies, val_users, val_predictions):
-        val_movies, val_users, val_predictions = [kwargs[k] for k in ['val_movies', 'val_users', 'val_predictions']]
+    def fit(self, train_movies, train_users, train_predictions, **kwargs):
+        val_movies, val_users, val_predictions = self.get_kwargs_data(kwargs, 'val_movies', 'val_users',
+                                                                      'val_predictions')
+        test_movies, test_users, test_every = self.get_kwargs_data(kwargs, 'test_movies', 'test_users', 'test_every')
         # TODO: zero better?
-        data, mask = create_matrices(train_movies, train_users, train_predictions,
-                                     default_replace=config.DEFAULT_VALUE)
+        data, mask = self.create_matrices(train_movies, train_users, train_predictions,
+                                     default_replace=config.DEFAULT_VALUE if not self.is_initializer_model
+                                     else config.SECOND_DEFAULT_VALUE)
         data, mask = data.T, mask.T  # NOTE transpose
-        data_val, mask_val = create_matrices(val_movies, val_users, val_predictions,
-                                             default_replace=config.DEFAULT_VALUE)
-        data_val, mask_val = data_val.T, mask_val.T  # NOTE transpose
+        if not val_movies is None:
+            data_val, mask_val = self.create_matrices(val_movies, val_users, val_predictions,
+                                         default_replace=config.DEFAULT_VALUE if not self.is_initializer_model
+                                         else config.SECOND_DEFAULT_VALUE)
+            data_val, mask_val = data_val.T, mask_val.T  # NOTE transpose
 
         self.fit_init(mask)
 
@@ -128,40 +128,33 @@ class KernelNet(BaseModel):
         init = tf.global_variables_initializer()
         with tf.Session() as sess:
             sess.run(init)
-            for i in range(int(N_EPOCHS / OUTPUT_EVERY)):
+            for i in range(N_EPOCHS):
                 self.optimizer.minimize(sess, feed_dict={self.R: data})  # do maxiter optimization steps
                 pre = sess.run(self.prediction, feed_dict={self.R: data})  # predict ratings
 
-                error_val = (mask_val * (np.clip(pre, 1., 5.) - data_val) ** 2).sum() / mask_val.sum()
+                error_val = 0 if val_movies is None \
+                    else (mask_val * (np.clip(pre, 1., 5.) - data_val) ** 2).sum() / mask_val.sum()
                 error_train = (mask * (np.clip(pre, 1., 5.) - data) ** 2).sum() / mask.sum()
 
                 print('.-^-._' * 12)
-                self.logger.info(f'epoch: {i}, validation rmse: {np.sqrt(error_val)} train rmse: {np.sqrt(error_train)}')
+                self.log_info(
+                    f'epoch: {i}, validation rmse: {np.sqrt(error_val)} train rmse: {np.sqrt(error_train)}')
 
                 self.reconstructed_matrix = pre
 
                 if i == 0 and TESTING:
                     break
 
-    def predict(self, test_movies, test_users, save_submission):
+                if not test_movies is None and i + 1 % test_every == 0:
+                    self.log_info(f'Creating submission for epoch {i} with train_err {np.sqrt(error_train)}')
+                    self.predict(test_movies, test_users, True, suffix=f'_e{i}_err{np.sqrt(error_train):.2f}')
+
+    def predict(self, test_movies, test_users, save_submission, suffix=''):
         assert (len(test_users) == len(test_movies)), "users-movies combinations specified should have equal length"
-        return self._extract_prediction_from_full_matrix(self.reconstructed_matrix, users=test_users,
-                                                         movies=test_movies, save_submission=save_submission)
-
-    def _extract_prediction_from_full_matrix(self, reconstructed_matrix, users, movies, save_submission=True):
-        # returns predictions for the users-movies combinations specified based on a full m \times n matrix
-        predictions = np.zeros(len(users))
-        index = [''] * len(users)
-
-        for i, (user, movie) in enumerate(zip(users, movies)):
-            predictions[i] = reconstructed_matrix[movie][user]
-            index[i] = f"r{user + 1}_c{movie + 1}"
-
-        if save_submission:
-            submission = pd.DataFrame({'Id': index, 'Prediction': predictions})
-            submission.to_csv(config.SUBMISSION_NAME, index=False)
-        return predictions
+        return self._extract_prediction_from_full_matrix(self.reconstructed_matrix.transpose(), users=test_users,
+                                                         movies=test_movies, save_submission=save_submission,
+                                                         suffix=suffix)
 
 
-def get_model(config, logger):
-    return KernelNet(logger)
+def get_model(config, logger, is_initializer_model=False):
+    return KernelNet(logger, is_initializer_model)
