@@ -23,13 +23,13 @@ class BaseModel(ABC):
         return output
 
     def _extract_prediction_from_full_matrix(self, reconstructed_matrix, users, movies, save_submission=True,
-                                             suffix=''):
+                                             suffix='', transpose_matrix=False):
         # returns predictions for the users-movies combinations specified based on a full m \times n matrix
         predictions = np.zeros(len(users))
         index = [''] * len(users)
 
         for i, (user, movie) in enumerate(zip(users, movies)):
-            predictions[i] = reconstructed_matrix[movie][user]
+            predictions[i] = reconstructed_matrix[movie][user] if not transpose_matrix else reconstructed_matrix[user][movie]
             index[i] = f"r{user + 1}_c{movie + 1}"
 
         if save_submission:

@@ -14,12 +14,13 @@ config.TRAIN_SIZE = 0.9
 
 config.VALIDATE = True
 
-config.MODEL = 'kernelNet'
+config.MODEL = 'autoencoder'
 config.DEFAULT_VALUE = 'user_mean'
 config.STRATIFY = 'movies'  # or users
 
 config.K_SINGULAR_VALUES = 3
 config.MAX_ITER = 2
+config.ENCODED_DIMENSION = 250
 
 config.TEST_EVERY = 3
 
