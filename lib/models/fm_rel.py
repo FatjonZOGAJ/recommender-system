@@ -135,5 +135,5 @@ class FMRelational(BaseModel):
         return X.tocsr()
 
 
-def get_model(config, logger):
-    return FMRelational()
+def get_model(config, logger, is_initializer_model=False):
+    return FMRelational(logger, is_initializer_model)

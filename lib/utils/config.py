@@ -14,8 +14,9 @@ config.TRAIN_SIZE = 0.9
 
 config.VALIDATE = True
 
-config.MODEL = 'kernelNet'
-config.DEFAULT_VALUE = 'user_mean'
+config.MODEL = 'svd'
+config.DEFAULT_VALUE = 'kernelNet'
+config.SECOND_DEFAULT_VALUE = 'zero'
 config.STRATIFY = 'movies'  # or users
 
 config.K_SINGULAR_VALUES = 3

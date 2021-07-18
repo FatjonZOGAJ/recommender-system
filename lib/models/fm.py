@@ -14,7 +14,8 @@ params.GROUPING = True
 
 
 class FM(BaseModel):
-    def __init__(self):
+    def __init__(self, logger, is_initializer_model):
+        super().__init__(logger, is_initializer_model)
         self.explanation_columns = ['user_id', 'movie_id']
         self.fm = myfm.MyFMRegressor(rank=params.RANK, random_seed=69)
 
@@ -53,5 +54,5 @@ class FM(BaseModel):
         return predictions
 
 
-def get_model(config, logger):
-    return FM()
+def get_model(config, logger, is_initializer_model=False):
+    return FM(logger, is_initializer_model)
