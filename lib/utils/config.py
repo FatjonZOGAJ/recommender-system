@@ -11,11 +11,11 @@ config.SUBMISSION_NAME = ''
 config.TIME_STR = ''
 config.DATA_DIR = 'data/'
 config.TRAIN_SIZE = 0.9
+config.VALIDATE = False
 
-config.VALIDATE = True
-
-config.MODEL = 'autoencoder'
-config.DEFAULT_VALUE = 'user_mean'
+config.MODEL = 'fm_rel'
+config.DEFAULT_VALUE = 'kernelNet'
+config.SECOND_DEFAULT_VALUE = 'zero'
 config.STRATIFY = 'movies'  # or users
 
 config.K_SINGULAR_VALUES = 3

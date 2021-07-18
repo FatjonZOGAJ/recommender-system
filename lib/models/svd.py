@@ -3,18 +3,19 @@ import pandas as pd
 
 from lib.utils.config import config
 from lib.models.base_model import BaseModel
-from lib.utils.loader import create_matrices
 
 
 class SVD(BaseModel):
-    def __init__(self, number_of_users, number_of_movies):
+    def __init__(self, number_of_users, number_of_movies, logger, is_initializer_model):
+        super().__init__(logger, is_initializer_model)
         self.num_users = number_of_users
         self.num_movies = number_of_movies
 
     def fit(self, train_movies, train_users, train_predictions, **kwargs):
         # create full matrix of observed and unobserved values
-        data, mask = create_matrices(train_movies, train_users, train_predictions,
-                                     default_replace=config.DEFAULT_VALUE)
+        data, mask = self.create_matrices(train_movies, train_users, train_predictions,
+                                     default_replace=config.DEFAULT_VALUE if not self.is_initializer_model
+                                     else config.SECOND_DEFAULT_VALUE)
         k_singular_values = config.K_SINGULAR_VALUES
         number_of_singular_values = min(self.num_users, self.num_movies)
         assert (k_singular_values <= number_of_singular_values), "choose correct number of singular values"
@@ -29,5 +30,5 @@ class SVD(BaseModel):
                                                          movies=test_movies, save_submission=save_submission)
 
 
-def get_model(config, logger):
-    return SVD(config.NUM_USERS, config.NUM_MOVIES)
+def get_model(config, logger, is_initializer_model=False):
+    return SVD(config.NUM_USERS, config.NUM_MOVIES, logger, is_initializer_model)
