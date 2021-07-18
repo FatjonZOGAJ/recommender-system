@@ -25,20 +25,6 @@ class ALS(BaseModel):
         return self._extract_prediction_from_full_matrix(self.reconstructed_matrix, users=test_users,
                                                          movies=test_movies, save_submission=save_submission)
 
-    def _extract_prediction_from_full_matrix(self, reconstructed_matrix, users, movies, save_submission=True):
-        # returns predictions for the users-movies combinations specified based on a full m \times n matrix
-        predictions = np.zeros(len(users))
-        index = [''] * len(users)
-
-        for i, (user, movie) in enumerate(zip(users, movies)):
-            predictions[i] = reconstructed_matrix[user][movie]
-            index[i] = f"r{user + 1}_c{movie + 1}"
-
-        if save_submission:
-            submission = pd.DataFrame({'Id': index, 'Prediction': predictions})
-            submission.to_csv(config.SUBMISSION_NAME, index=False)
-        return predictions
-
 
 def get_model(config, logger):
     return ALS(config.NUM_USERS, config.NUM_MOVIES)

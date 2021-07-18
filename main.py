@@ -15,7 +15,7 @@ def main():
         train_pd, val_pd, test_pd = read_data()
         train_users, train_movies, train_predictions = extract_users_items_predictions(train_pd)
         val_users, val_movies, val_predictions = extract_users_items_predictions(val_pd)
-        test_users, test_movies, test_prediction = extract_users_items_predictions(test_pd)
+        test_users, test_movies, _ = extract_users_items_predictions(test_pd)
         model = models.models[config.MODEL].get_model(config, logger)
         logger.info("Fitting the model")
         model.fit(train_movies, train_users, train_predictions,
@@ -28,10 +28,11 @@ def main():
         logger.info('Training on 100% of the data')
         train_pd, test_pd = read_data()
         train_users, train_movies, train_predictions = extract_users_items_predictions(train_pd)
-        test_users, test_movies, test_prediction = extract_users_items_predictions(test_pd)
+        test_users, test_movies, _ = extract_users_items_predictions(test_pd)
         model = models.models[config.MODEL].get_model(config, logger)
         logger.info("Fitting the model")
-        model.fit(train_movies, train_users, train_predictions)
+        model.fit(train_movies, train_users, train_predictions,
+                  test_movies=test_movies, test_users=test_users, test_every=config.TEST_EVERY)  # iterative test score
 
     logger.info("Creating submission file")
     model.predict(test_movies, test_users, save_submission=True)

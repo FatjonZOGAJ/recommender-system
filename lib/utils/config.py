@@ -11,6 +11,7 @@ config.SUBMISSION_NAME = ''
 config.TIME_STR = ''
 config.DATA_DIR = 'data/'
 config.TRAIN_SIZE = 0.9
+
 config.VALIDATE = True
 
 config.MODEL = 'kernelNet'
@@ -20,6 +21,7 @@ config.STRATIFY = 'movies'  # or users
 config.K_SINGULAR_VALUES = 3
 config.MAX_ITER = 2
 
+config.TEST_EVERY = 3
 
 # saving config file
 def gen_config(config_file, config):
