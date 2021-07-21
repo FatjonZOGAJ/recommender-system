@@ -13,30 +13,46 @@ def loss_function_autoencoder(original, reconstructed, mask):
 
 
 class Encoder(nn.Module):
-    def __init__(self, input_dimension, encoded_dimension=250):
+    def __init__(self, input_dimension, config, encoded_dimension=250):
         super().__init__()
 
-        self.model = nn.Sequential(
-            nn.Linear(in_features=input_dimension, out_features=500),
-            nn.ReLU(),
-            nn.Linear(in_features=500, out_features=encoded_dimension),
-            nn.ReLU()
-        )
+        if config.SINGLE_LAYER:
+            self.model = nn.Sequential(
+                nn.Linear(in_features=input_dimension, out_features=encoded_dimension),
+                nn.ReLU(),
+            )
+        else:
+            input_layer = nn.Sequential(nn.Linear(in_features=input_dimension, out_features=config.HIDDEN_DIMENSION[0]), nn.ReLU())
+            len_hidden_dimensions = len(config.HIDDEN_DIMENSION)
+            if len_hidden_dimensions != 0:
+                hidden_layers = [nn.Sequential(nn.Linear(in_features=config.HIDDEN_DIMENSION[i], out_features=config.HIDDEN_DIMENSION[(i+1)] if i == len_hidden_dimensions else encoded_dimension),
+                                        nn.ReLU()) for i in range(len_hidden_dimensions)]
+                layers = [input_layer, *hidden_layers]
+            self.model = nn.Sequential(*layers)
 
     def forward(self, data):
         return self.model(data)
 
 
 class Decoder(nn.Module):
-    def __init__(self, output_dimensions, encoded_dimension=250):
+    def __init__(self, output_dimensions, config, encoded_dimension=250):
         super().__init__()
-
-        self.model = nn.Sequential(
-            nn.Linear(in_features=encoded_dimension, out_features=500),
-            nn.ReLU(),
-            nn.Linear(in_features=500, out_features=output_dimensions),
-            nn.ReLU()
-        )
+        if config.SINGLE_LAYER:
+            self.model = nn.Sequential(
+                nn.Linear(in_features=encoded_dimension, out_features=output_dimensions),
+                nn.ReLU(),
+            )
+        else:
+            input_layer = nn.Sequential(nn.Linear(in_features=encoded_dimension, out_features=config.HIDDEN_DIMENSION[-1]),
+                                        nn.ReLU())
+            len_hidden_dimensions = len(config.HIDDEN_DIMENSION)
+            if len_hidden_dimensions != 0:
+                hidden_layers = [nn.Sequential(nn.Linear(in_features=config.HIDDEN_DIMENSION[i],
+                                                         out_features=config.HIDDEN_DIMENSION[(
+                                                                     i - 1)] if i != 0 else output_dimensions),
+                                               nn.ReLU()) for i in range(len_hidden_dimensions-1, -1, -1)]
+                layers = [input_layer, *hidden_layers]
+            self.model = nn.Sequential(*layers)
 
     def forward(self, encodings):
         return self.model(encodings)
@@ -120,10 +136,12 @@ def get_model(config, logger):
         encoder=Encoder(
             input_dimension=config.NUM_MOVIES,
             encoded_dimension=config.ENCODED_DIMENSION,
+            config=config
         ),
         decoder=Decoder(
             output_dimensions=config.NUM_MOVIES,
             encoded_dimension=config.ENCODED_DIMENSION,
+            config=config
         )
     ).to(device)
     return AutoEncoder(autoencoder_network, config.NUM_USERS, config.NUM_MOVIES, logger, device, config)

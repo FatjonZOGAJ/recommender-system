@@ -26,6 +26,8 @@ config.ENCODED_DIMENSION = 250
 config.LEARNING_RATE = 0.001
 config.BATCH_SIZE = 64
 config.NUM_EPOCHS = 1000
+config.HIDDEN_DIMENSION = [500]
+config.SINGLE_LAYER = False
 
 config.TEST_EVERY = 3
 
