@@ -13,14 +13,18 @@ config.DATA_DIR = 'data/'
 config.TRAIN_SIZE = 0.9
 config.VALIDATE = True
 
-config.MODEL = 'fm_rel'
+config.MODEL = 'autoencoder'
 config.DEFAULT_VALUE = 'item_mean'
 config.SECOND_DEFAULT_VALUE = 'zero'
 config.STRATIFY = 'movies'  # or users
 
 config.K_SINGULAR_VALUES = 3
 config.MAX_ITER = 2
+
 config.ENCODED_DIMENSION = 250
+config.LEARNING_RATE = 0.001
+config.BATCH_SIZE = 64
+config.NUM_EPOCHS = 1000
 
 config.TEST_EVERY = 3
 

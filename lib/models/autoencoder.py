@@ -53,19 +53,18 @@ class AutoEncoderNetwork(nn.Module):
 
 
 class AutoEncoder(BaseModel):
-    def __init__(self, autoencoder_network, num_users, num_movies, logger, device, learning_rate=1e-3, num_epochs=2000,
-                 batch_size=64):
+    def __init__(self, autoencoder_network, num_users, num_movies, logger, device, config):
 
         super().__init__(logger)
         self.autoencoder_network = autoencoder_network
         self.logger = logger
         self.num_users = num_users
         self.num_movies = num_movies
-        self.num_epochs = num_epochs
-        self.batch_size = batch_size
+        self.num_epochs = config.NUM_EPOCHS
+        self.batch_size = config.BATCH_SIZE
         self.device = device
         self.loss_function = loss_function_autoencoder
-        self.optimizer = optim.Adam(self.autoencoder_network.parameters(), lr=learning_rate)
+        self.optimizer = optim.Adam(self.autoencoder_network.parameters(), lr=config.LEARNING_RATE)
 
     def fit(self, train_movies, train_users, train_predictions, **kwargs):
         # Build Dataloaders
@@ -127,4 +126,4 @@ def get_model(config, logger):
             encoded_dimension=config.ENCODED_DIMENSION,
         )
     ).to(device)
-    return AutoEncoder(autoencoder_network, config.NUM_USERS, config.NUM_MOVIES, logger, device)
+    return AutoEncoder(autoencoder_network, config.NUM_USERS, config.NUM_MOVIES, logger, device, config)
