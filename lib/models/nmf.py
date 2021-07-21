@@ -1,9 +1,6 @@
-import pandas as pd
-import numpy as np
-
-from lib.models.base_model import BaseModel
 from sklearn.decomposition import non_negative_factorization
 
+from lib.models.base_model import BaseModel
 from lib.utils.config import config
 
 

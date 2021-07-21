@@ -1,9 +1,8 @@
-from lib.models import svd, als, kernelNet, autoencoder, fm, fm_rel
+from lib.models import autoencoder, fm, kernel_net, nmf, svd
 
 models = {'svd': svd,
-          'als': als,
-          'kernelNet': kernelNet,
+          'als': nmf,
+          'kernel_net': kernel_net,
           'autoencoder': autoencoder,
-          'fm': fm,
-          'fm_rel': fm_rel
+          'fm': fm
           }

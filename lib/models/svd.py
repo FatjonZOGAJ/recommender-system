@@ -1,8 +1,7 @@
 import numpy as np
-import pandas as pd
 
-from lib.utils.config import config
 from lib.models.base_model import BaseModel
+from lib.utils.config import config
 
 
 class SVD(BaseModel):
