@@ -4,6 +4,8 @@ Adapted from https://github.com/tohtsky/myFM/blob/master/examples/ml-1m-extended
 import myfm
 import numpy as np
 import pandas as pd
+import hickle as hkl
+from tqdm import tqdm
 from easydict import EasyDict as edict
 from myfm import RelationBlock
 from scipy import sparse
@@ -27,6 +29,10 @@ class FMRelational(BaseModel):
         super().__init__(logger, is_initializer_model)
         self.num_users = number_of_users
         self.num_movies = number_of_movies
+        if params.USE_JACCARD:
+            logger.info('Loading dumped Jaccard matrix')
+            self.jaccard = hkl.load('jaccard_gzip.hkl')
+
 
     def fit(self, train_movies, train_users, train_predictions, **kwargs):
         self.df_train = pd.DataFrame({'user_id': train_users, 'movie_id': train_movies, 'rating': train_predictions})
@@ -52,6 +58,8 @@ class FMRelational(BaseModel):
         group_shapes.append(len(self.user_id_to_index))  # user ids
         if params.USE_IU:
             group_shapes.append(len(self.movie_id_to_index))
+        if params.USE_JACCARD:
+            group_shapes.append(len(self.user_id_to_index))
         group_shapes.append(len(self.movie_id_to_index))  # movie ids
         if params.USE_II:
             group_shapes.append(len(self.user_id_to_index))  # all users who watched the movies
@@ -123,9 +131,11 @@ class FMRelational(BaseModel):
         return blocks
 
     def _augment_user_id(self, user_ids, user_id_to_index, movie_id_to_index, user_vs_watched):
-        X = sparse.lil_matrix((len(user_ids), len(user_id_to_index) + (len(movie_id_to_index) if params.USE_IU else 0)))
+        print('Preparing user info')
+        X = sparse.lil_matrix((len(user_ids), len(user_id_to_index) + (len(movie_id_to_index) if params.USE_IU else 0) +
+                               (len(user_id_to_index) if params.USE_JACCARD else 0)))
         # index and user_id are equal
-        for index, user_id in enumerate(user_ids):
+        for index, user_id in enumerate(tqdm(user_ids)):
             if user_id in user_id_to_index:
                 X[index, user_id_to_index[user_id]] = 1
             if params.USE_IU:
@@ -134,13 +144,19 @@ class FMRelational(BaseModel):
                 for mid in watched_movies:
                     if mid in movie_id_to_index:
                         X[index, len(user_id_to_index) + movie_id_to_index[mid]] = normalizer
+            if params.USE_JACCARD:
+                for uid in user_ids:
+                    X[index, len(user_id_to_index) + len(movie_id_to_index) + user_id_to_index[uid]] = self.jaccard[user_id,uid]
+                    #T[user_id, uid] = jaccard(user_id, uid, user_vs_watched)
+
         return X.tocsr()
 
     def _augment_movie_id(self, movie_ids, movie_id_to_index, user_id_to_index, movie_vs_watched):
+        print('Preparing movie info')
         X = sparse.lil_matrix(
             (len(movie_ids), len(movie_id_to_index) + (len(user_id_to_index) if params.USE_II else 0)))
         # index and movie_id are equal
-        for index, movie_id in enumerate(movie_ids):
+        for index, movie_id in enumerate(tqdm(movie_ids)):
             if movie_id in movie_id_to_index:
                 X[index, movie_id_to_index[movie_id]] = 1
             if params.USE_II:
@@ -150,6 +166,12 @@ class FMRelational(BaseModel):
                     if uid in user_id_to_index:
                         X[index, len(movie_id_to_index) + user_id_to_index[uid]] = normalizer
         return X.tocsr()
+
+
+def jaccard(u, v, user_vs_watched):
+    set_u = set(user_vs_watched[u])
+    set_v = set(user_vs_watched[v])
+    return len(set_u & set_v) / len(set_u | set_v)
 
 
 def get_model(config, logger, is_initializer_model=False):
