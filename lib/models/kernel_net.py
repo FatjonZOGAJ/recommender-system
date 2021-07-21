@@ -21,7 +21,7 @@ LAMBDA_2 = 90.
 LAMBDA_SPARSITY = 0.023
 N_LAYERS = 2
 OUTPUT_EVERY = 50 if not TESTING else 5  # evaluate performance on test set; breaks l-bfgs loop
-N_EPOCHS = 3# N_LAYERS * 10
+N_EPOCHS = 3  # N_LAYERS * 10
 VERBOSE_BFGS = False
 
 
@@ -113,13 +113,13 @@ class KernelNet(BaseModel):
         test_movies, test_users, test_every = self.get_kwargs_data(kwargs, 'test_movies', 'test_users', 'test_every')
         # TODO: zero better?
         data, mask = self.create_matrices(train_movies, train_users, train_predictions,
-                                     default_replace=config.DEFAULT_VALUE if not self.is_initializer_model
-                                     else config.SECOND_DEFAULT_VALUE)
+                                          default_replace=config.DEFAULT_VALUE if not self.is_initializer_model
+                                          else config.SECOND_DEFAULT_VALUE)
         data, mask = data.T, mask.T  # NOTE transpose
         if not val_movies is None:
             data_val, mask_val = self.create_matrices(val_movies, val_users, val_predictions,
-                                         default_replace=config.DEFAULT_VALUE if not self.is_initializer_model
-                                         else config.SECOND_DEFAULT_VALUE)
+                                                      default_replace=config.DEFAULT_VALUE if not self.is_initializer_model
+                                                      else config.SECOND_DEFAULT_VALUE)
             data_val, mask_val = data_val.T, mask_val.T  # NOTE transpose
 
         self.fit_init(mask)
@@ -136,9 +136,8 @@ class KernelNet(BaseModel):
                     else (mask_val * (np.clip(pre, 1., 5.) - data_val) ** 2).sum() / mask_val.sum()
                 error_train = (mask * (np.clip(pre, 1., 5.) - data) ** 2).sum() / mask.sum()
 
-                print('.-^-._' * 12)
                 self.log_info(
-                    f'epoch: {i}, validation rmse: {np.sqrt(error_val)} train rmse: {np.sqrt(error_train)}')
+                    f'epoch: {i}, validation rmse: {np.round(np.sqrt(error_val), 4)}, train rmse: {np.round(np.sqrt(error_train), 4)}')
 
                 self.reconstructed_matrix = pre
 
