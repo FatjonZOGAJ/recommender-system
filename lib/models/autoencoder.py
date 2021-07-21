@@ -1,10 +1,10 @@
+import numpy as np
 import torch
 import torch.nn as nn
-from lib.models.base_model import BaseModel
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
-import numpy as np
 
+from lib.models.base_model import BaseModel
 from lib.utils.utils import get_score
 
 

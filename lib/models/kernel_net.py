@@ -4,8 +4,6 @@ https://github.com/lorenzMuller/kernelNet_MovieLens/blob/master/kernelNet_ml1m.p
 '''
 import numpy as np
 import tensorflow as tf
-# from dataLoader import loadData
-
 from easydict import EasyDict as edict
 
 from lib.models.base_model import BaseModel

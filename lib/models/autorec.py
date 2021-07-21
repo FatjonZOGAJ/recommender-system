@@ -1,11 +1,12 @@
 '''
 Adapted from https://github.com/gtshs2/Autorec
 '''
-import tensorflow as tf
-import time
-import numpy as np
-import os
 import math
+import os
+import time
+
+import numpy as np
+import tensorflow as tf
 
 from lib.models.base_model import BaseModel
 

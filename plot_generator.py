@@ -1,9 +1,9 @@
+import matplotlib.pyplot as plt
+
 from lib.models import models
 from lib.utils import utils
 from lib.utils.config import config
-import matplotlib.pyplot as plt
-
-from lib.utils.loader import read_data, extract_users_items_predictions
+from lib.utils.loader import extract_users_items_predictions, read_data
 from lib.utils.utils import get_score
 
 

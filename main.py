@@ -1,9 +1,8 @@
 import lib.models as models
 from lib.utils import utils
-from lib.utils.utils import get_score
-
 from lib.utils.config import config
-from lib.utils.loader import read_data, extract_users_items_predictions
+from lib.utils.loader import extract_users_items_predictions, read_data
+from lib.utils.utils import get_score
 
 
 def main():

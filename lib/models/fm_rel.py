@@ -1,11 +1,11 @@
+import myfm
 import numpy as np
 import pandas as pd
-from lib.models.base_model import BaseModel
-import myfm
 from easydict import EasyDict as edict
 from myfm import RelationBlock
 from scipy import sparse
 
+from lib.models.base_model import BaseModel
 from lib.utils.config import config
 
 params = edict()
