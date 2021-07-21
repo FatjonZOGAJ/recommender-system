@@ -1,6 +1,5 @@
 '''
-adapted from Lorenz Muller
-https://github.com/lorenzMuller/kernelNet_MovieLens/blob/master/kernelNet_ml1m.py
+Adapted from https://github.com/lorenzMuller/kernelNet_MovieLens/blob/master/kernelNet_ml1m.py
 '''
 import numpy as np
 import tensorflow as tf

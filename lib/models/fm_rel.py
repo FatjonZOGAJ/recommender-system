@@ -1,3 +1,6 @@
+'''
+Adapted from https://github.com/tohtsky/myFM/blob/master/examples/ml-1m-extended.ipynb
+'''
 import myfm
 import numpy as np
 import pandas as pd
@@ -11,18 +14,22 @@ from lib.utils.config import config
 params = edict()
 params.RANK = 32
 params.N_ITER = 512  # does not work if not enough iterations
-params.SAMPLES = 100
+params.SAMPLES = None  # default is params.N_ITER - 5
 params.GROUPING = True
 params.USE_IU = True  # use implicit user feature
 params.USE_II = True  # use implicit item feature
-params.ORDERED_PROBIT = True
+params.USE_JACCARD = True  # Taken from "Improving Jaccard Index for Measuring Similarity in Collaborative Filtering"
+params.ORDERED_PROBIT = False
 
 
 class FMRelational(BaseModel):
+    def __init__(self, number_of_users, number_of_movies, logger, is_initializer_model):
+        super().__init__(logger, is_initializer_model)
+        self.num_users = number_of_users
+        self.num_movies = number_of_movies
+
     def fit(self, train_movies, train_users, train_predictions, **kwargs):
         self.df_train = pd.DataFrame({'user_id': train_users, 'movie_id': train_movies, 'rating': train_predictions})
-        if params.ORDERED_PROBIT:
-            self.df_train.rating -= 1  # rating values are now [0, 1, 2, 3, 4]
 
         self.unique_user_ids = np.unique(self.df_train.user_id)
         self.unique_movie_ids = np.unique(self.df_train.movie_id)
@@ -37,31 +44,32 @@ class FMRelational(BaseModel):
             self.movie_vs_watched.setdefault(movie_id, list()).append(user_id)
             self.user_vs_watched.setdefault(user_id, list()).append(movie_id)
 
-        # setup grouping
-        feature_group_sizes = []
-        feature_group_sizes.append(len(self.user_id_to_index))  # user ids
-        if params.USE_IU:
-            feature_group_sizes.append(len(self.movie_id_to_index))
-        feature_group_sizes.append(len(self.movie_id_to_index))  # movie ids
-        if params.USE_II:
-            feature_group_sizes.append(len(self.user_id_to_index))  # all users who watched the movies
-
         # Create RelationBlock.
         train_blocks = self._create_relational_blocks(self.df_train)
+
+        # setup grouping, which specifies each variable group’s size.
+        group_shapes = []
+        group_shapes.append(len(self.user_id_to_index))  # user ids
+        if params.USE_IU:
+            group_shapes.append(len(self.movie_id_to_index))
+        group_shapes.append(len(self.movie_id_to_index))  # movie ids
+        if params.USE_II:
+            group_shapes.append(len(self.user_id_to_index))  # all users who watched the movies
 
         if not params.ORDERED_PROBIT:
             self.fm = myfm.MyFMRegressor(rank=params.RANK)
             self.fm.fit(
                 None, self.df_train.rating.values, X_rel=train_blocks,
-                group_shapes=feature_group_sizes,
+                group_shapes=group_shapes,
                 n_iter=params.N_ITER,
                 n_kept_samples=params.SAMPLES
             )
         else:
             self.fm = myfm.MyFMOrderedProbit(rank=params.RANK)
+            # rating values are set to [0, 1, 2, 3, 4]
             self.fm.fit(
-                None, self.df_train.rating.values, X_rel=train_blocks,
-                group_shapes=feature_group_sizes,
+                None, self.df_train.rating.values - 1, X_rel=train_blocks,
+                group_shapes=group_shapes,
                 n_iter=params.N_ITER,
                 n_kept_samples=None
             )
@@ -84,8 +92,8 @@ class FMRelational(BaseModel):
             X_test = sparse.hstack(X, format='csr')
 
             predictions = self.fm.predict_proba(X_test)
-            predictions = predictions.dot(np.arange(1,
-                                                    6))  # Calculated Expected Value over class probabilities. Rating values are now [1, 2, 3, 4, 5]
+            # Calculate expected value over class probabilities. Rating values are now [1, 2, 3, 4, 5]
+            predictions = predictions.dot(np.arange(1, 6))
 
         if save_submission:
             index = [''] * len(test_users)
@@ -116,33 +124,33 @@ class FMRelational(BaseModel):
 
     def _augment_user_id(self, user_ids, user_id_to_index, movie_id_to_index, user_vs_watched):
         X = sparse.lil_matrix((len(user_ids), len(user_id_to_index) + (len(movie_id_to_index) if params.USE_IU else 0)))
+        # index and user_id are equal
         for index, user_id in enumerate(user_ids):
             if user_id in user_id_to_index:
                 X[index, user_id_to_index[user_id]] = 1
-            if not params.USE_IU:
-                continue
-            watched_movies = user_vs_watched.get(user_id, [])
-            normalizer = 1 / max(len(watched_movies), 1) ** 0.5
-            for mid in watched_movies:
-                if mid in movie_id_to_index:
-                    X[index, movie_id_to_index[mid] + len(user_id_to_index)] = normalizer
+            if params.USE_IU:
+                watched_movies = user_vs_watched.get(user_id, [])
+                normalizer = 1 / max(len(watched_movies), 1) ** 0.5
+                for mid in watched_movies:
+                    if mid in movie_id_to_index:
+                        X[index, len(user_id_to_index) + movie_id_to_index[mid]] = normalizer
         return X.tocsr()
 
     def _augment_movie_id(self, movie_ids, movie_id_to_index, user_id_to_index, movie_vs_watched):
         X = sparse.lil_matrix(
             (len(movie_ids), len(movie_id_to_index) + (len(user_id_to_index) if params.USE_II else 0)))
+        # index and movie_id are equal
         for index, movie_id in enumerate(movie_ids):
             if movie_id in movie_id_to_index:
                 X[index, movie_id_to_index[movie_id]] = 1
-            if not params.USE_II:
-                continue
-            watched_users = movie_vs_watched.get(movie_id, [])
-            normalizer = 1 / max(len(watched_users), 1) ** 0.5
-            for uid in watched_users:
-                if uid in user_id_to_index:
-                    X[index, user_id_to_index[uid] + len(movie_id_to_index)] = normalizer
+            if params.USE_II:
+                watched_users = movie_vs_watched.get(movie_id, [])
+                normalizer = 1 / max(len(watched_users), 1) ** 0.5
+                for uid in watched_users:
+                    if uid in user_id_to_index:
+                        X[index, len(movie_id_to_index) + user_id_to_index[uid]] = normalizer
         return X.tocsr()
 
 
 def get_model(config, logger, is_initializer_model=False):
-    return FMRelational(logger, is_initializer_model)
+    return FMRelational(config.NUM_USERS, config.NUM_MOVIES, logger, is_initializer_model)
