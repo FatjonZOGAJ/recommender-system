@@ -24,3 +24,4 @@ tensorboard==1.15.0
 tensorflow-estimator==1.15.1
 tensorflow-gpu==1.15.0
 matplotlib~=3.4.2
+hickle==4.0.4

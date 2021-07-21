@@ -137,3 +137,4 @@ dmypy.json
 /notebooks/data_train.csv
 /notebooks/sampleSubmission.csv
 /notes
+*.hkl

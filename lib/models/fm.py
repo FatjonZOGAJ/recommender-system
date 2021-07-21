@@ -1,6 +1,8 @@
 '''
 Adapted from https://github.com/tohtsky/myFM/blob/master/examples/ml-1m-extended.ipynb
 '''
+import os.path
+
 import myfm
 import numpy as np
 import pandas as pd
@@ -9,6 +11,7 @@ from tqdm import tqdm
 from easydict import EasyDict as edict
 from myfm import RelationBlock
 from scipy import sparse
+from collections import defaultdict
 
 from lib.models.base_model import BaseModel
 from lib.utils.config import config
@@ -21,6 +24,7 @@ params.GROUPING = True
 params.USE_IU = True  # use implicit user feature
 params.USE_II = True  # use implicit item feature
 params.USE_JACCARD = True  # Taken from "Improving Jaccard Index for Measuring Similarity in Collaborative Filtering"
+params.USE_JACCARDPP = params.USE_JACCARD and False  # Taken from "Improving Jaccard Index for Measuring Similarity in Collaborative Filtering", using L=3 and H=4
 params.ORDERED_PROBIT = False
 
 
@@ -30,9 +34,18 @@ class FMRelational(BaseModel):
         self.num_users = number_of_users
         self.num_movies = number_of_movies
         if params.USE_JACCARD:
-            logger.info('Loading dumped Jaccard matrix')
-            self.jaccard = hkl.load('jaccard_gzip.hkl')
-
+            if params.USE_JACCARDPP and os.path.isfile('jaccard_L_gzip.hkl') and os.path.isfile('jaccard_H_gzip.hkl'):
+                L = hkl.load('jaccard_L_gzip.hkl')
+                H = hkl.load('jaccard_H_gzip.hkl')
+                self.jaccard = (L + H) / 2
+            elif os.path.isfile('jaccard_gzip.hkl'):
+                self.jaccard = None
+                return
+                logger.info('Loading dumped Jaccard matrix')
+                self.jaccard = hkl.load('jaccard_gzip.hkl')
+            else:
+                logger.info('Jaccard matrix not found, recalculating values')
+                self.jaccard = None
 
     def fit(self, train_movies, train_users, train_predictions, **kwargs):
         self.df_train = pd.DataFrame({'user_id': train_users, 'movie_id': train_movies, 'rating': train_predictions})
@@ -44,11 +57,18 @@ class FMRelational(BaseModel):
 
         self.movie_vs_watched = dict()
         self.user_vs_watched = dict()
+        self.user_vs_watched_L = defaultdict(list)  # L=3
+        self.user_vs_watched_H = defaultdict(list)  # H=4
         for row in self.df_train.itertuples():
             user_id = row.user_id
             movie_id = row.movie_id
+            rating = row.rating
             self.movie_vs_watched.setdefault(movie_id, list()).append(user_id)
             self.user_vs_watched.setdefault(user_id, list()).append(movie_id)
+            if rating <= 3:
+                self.user_vs_watched_L.setdefault(user_id, list()).append(movie_id)
+            else:
+                self.user_vs_watched_H.setdefault(user_id, list()).append(movie_id)
 
         # Create RelationBlock.
         train_blocks = self._create_relational_blocks(self.df_train)
@@ -146,8 +166,15 @@ class FMRelational(BaseModel):
                         X[index, len(user_id_to_index) + movie_id_to_index[mid]] = normalizer
             if params.USE_JACCARD:
                 for uid in user_ids:
-                    X[index, len(user_id_to_index) + len(movie_id_to_index) + user_id_to_index[uid]] = self.jaccard[user_id,uid]
-                    #T[user_id, uid] = jaccard(user_id, uid, user_vs_watched)
+                    if self.jaccard is not None:
+                        X[index, len(user_id_to_index) + len(movie_id_to_index) + user_id_to_index[uid]] = \
+                            self.jaccard[user_id, uid]
+                    else:
+                        X[index, len(user_id_to_index) + len(movie_id_to_index) + user_id_to_index[uid]] = \
+                            jaccard(user_id, uid, user_vs_watched) \
+                                if not params.USE_JACCARDPP \
+                                else (jaccard(user_id, uid, self.user_vs_watched_L) + jaccard(user_id, uid,
+                                                                                              self.user_vs_watched_H)) / 2
 
         return X.tocsr()
 
@@ -171,6 +198,8 @@ class FMRelational(BaseModel):
 def jaccard(u, v, user_vs_watched):
     set_u = set(user_vs_watched[u])
     set_v = set(user_vs_watched[v])
+    if len(set_u) == 0 and len(set_v) == 0:
+        return 0
     return len(set_u & set_v) / len(set_u | set_v)
 
 
