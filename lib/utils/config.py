@@ -13,7 +13,7 @@ config.DATA_DIR = 'data/'
 config.TRAIN_SIZE = 0.9
 config.VALIDATE = True
 
-config.MODEL = 'fm_rel'
+config.MODEL = 'fm'
 config.DEFAULT_VALUE = 'item_mean'
 config.SECOND_DEFAULT_VALUE = 'zero'
 config.STRATIFY = 'movies'  # or users
