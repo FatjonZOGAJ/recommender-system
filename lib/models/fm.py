@@ -35,12 +35,11 @@ class FMRelational(BaseModel):
         self.num_movies = number_of_movies
         if params.USE_JACCARD:
             if params.USE_JACCARDPP and os.path.isfile('jaccard_L_gzip.hkl') and os.path.isfile('jaccard_H_gzip.hkl'):
+                logger.info('Loading dumped Jaccard matrix')
                 L = hkl.load('jaccard_L_gzip.hkl')
                 H = hkl.load('jaccard_H_gzip.hkl')
                 self.jaccard = (L + H) / 2
             elif os.path.isfile('jaccard_gzip.hkl'):
-                self.jaccard = None
-                return
                 logger.info('Loading dumped Jaccard matrix')
                 self.jaccard = hkl.load('jaccard_gzip.hkl')
             else:
