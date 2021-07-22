@@ -19,10 +19,19 @@ def perform_kmeans(embeddings, embeddings_2d):
         plt.savefig('clustering{}.png'.format(num_cluster))
 
 
-if __name__ == '__main__':
+def plot_histogram(labels, bins):
+    values = np.bincount(labels)
+    categories = [str(int) for int in range(bins)]
+    plt.bar(categories, values)
+    plt.title('Movie category distribution')
+    plt.xlabel('Movie category')
+    plt.ylabel('Number of movies')
+    plt.savefig('movie_category_distribution.png')
 
-    if os.path.exists('movie_embeddings.npy'):
-        data = np.load('movie_embeddings.npy')
+
+if __name__ == '__main__':
+    if os.path.exists('data.npy'):
+        data = np.load('data.npy')
     else:
         logger = utils.init(seed=config.RANDOM_STATE)
         logger.info(f'Using {config.MODEL} model for prediction')
@@ -37,4 +46,10 @@ if __name__ == '__main__':
     embeddings = get_embeddings(data)
     embeddings_2d = get_embeddings(data, rank=2)
     perform_kmeans(embeddings, embeddings_2d)
+
+    kmeans = KMeans(n_clusters=18).fit(embeddings)
+    rank18_labels = kmeans.labels_
+    np.save('rank18_movie_categories.npy', rank18_labels)
+    plot_histogram(rank18_labels, 18)
+
 

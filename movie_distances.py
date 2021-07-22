@@ -37,8 +37,8 @@ def get_distances(embeddings):
 
 
 if __name__ == '__main__':
-    if os.path.exists('movie_embeddings.npy'):
-        data = np.load('movie_embeddings.npy')
+    if os.path.exists('data.npy'):
+        data = np.load('data.npy')
     else:
         logger = utils.init(seed=config.RANDOM_STATE)
         logger.info(f'Using {config.MODEL} model for prediction')
