@@ -1,3 +1,5 @@
+import os
+
 import lib.models as models
 from lib.utils import utils
 from lib.utils.config import config
@@ -8,7 +10,10 @@ from scipy.spatial import distance
 
 def get_embeddings(data, rank=10):
     U, s, Vt = np.linalg.svd(data, full_matrices=False)
-    return Vt[:rank, :].T
+    S = np.zeros((data.shape[0], data.shape[1]))
+    S[:data.shape[1], :data.shape[1]] = np.diag(s)
+    embeddings = np.sqrt(S).dot(Vt)[:rank, :]
+    return embeddings.T
 
 
 def get_distances(embeddings):
@@ -32,20 +37,20 @@ def get_distances(embeddings):
 
 
 if __name__ == '__main__':
-    logger = utils.init(seed=config.RANDOM_STATE)
-    logger.info(f'Using {config.MODEL} model for prediction')
-    # Load data
-    config.VALIDATE = False
-    data_pd, test_pd = read_data()
-    users, movies, predictions = extract_users_items_predictions(data_pd)
-    model = models.models[config.MODEL].get_model(config, logger)
-    data, mask = model.create_matrices(movies, users, predictions, config.DEFAULT_VALUE)
+    if os.path.exists('movie_embeddings.npy'):
+        data = np.load('movie_embeddings.npy')
+    else:
+        logger = utils.init(seed=config.RANDOM_STATE)
+        logger.info(f'Using {config.MODEL} model for prediction')
+        # Load data
+        config.VALIDATE = False
+        data_pd, test_pd = read_data()
+        users, movies, predictions = extract_users_items_predictions(data_pd)
+        model = models.models[config.MODEL].get_model(config, logger)
+        data, mask = model.create_matrices(movies, users, predictions, config.DEFAULT_VALUE)
+        np.save('data.npy', data)
 
     embeddings = get_embeddings(data)
-    np.save('movie_embeddings.npy', embeddings)
-    #euclidean_matrix, mahalanobis_matrix = get_distances(embeddings)
-
-    #np.save('euclidean_matrix.npy', euclidean_matrix)
-    #np.save('mahalanobis_matrix.npy', mahalanobis_matrix)
-
-
+    euclidean_matrix, mahalanobis_matrix = get_distances(embeddings)
+    np.save('euclidean_matrix.npy', euclidean_matrix)
+    np.save('mahalanobis_matrix.npy', mahalanobis_matrix)
