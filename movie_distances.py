@@ -42,9 +42,10 @@ if __name__ == '__main__':
     data, mask = model.create_matrices(movies, users, predictions, config.DEFAULT_VALUE)
 
     embeddings = get_embeddings(data)
-    euclidean_matrix, mahalanobis_matrix = get_distances(embeddings)
+    np.save('movie_embeddings.npy', embeddings)
+    #euclidean_matrix, mahalanobis_matrix = get_distances(embeddings)
 
-    np.save('euclidean_matrix.npy', euclidean_matrix)
-    np.save('mahalanobis_matrix.npy', mahalanobis_matrix)
+    #np.save('euclidean_matrix.npy', euclidean_matrix)
+    #np.save('mahalanobis_matrix.npy', mahalanobis_matrix)
 
 
