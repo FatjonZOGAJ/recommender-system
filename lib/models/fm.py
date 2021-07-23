@@ -86,6 +86,9 @@ class FMRelational(BaseModel):
             else:
                 self.user_vs_watched_H.setdefault(user_id, list()).append(movie_id)
 
+        # Create RelationBlock.
+        train_blocks = self._create_relational_blocks(self.df_train)
+
         # setup grouping, which specifies each variable group’s size.
         group_shapes = []
         group_shapes.append(len(self.user_id_to_index))  # user ids
@@ -103,8 +106,6 @@ class FMRelational(BaseModel):
                 group_shapes.append(len(self.movie_id_to_index))
 
         if not params.ORDERED_PROBIT:
-            # Create RelationBlock.
-            train_blocks = self._create_relational_blocks(self.df_train)
             self.fm = myfm.MyFMRegressor(rank=params.RANK)
             self.fm.fit(
                 None, self.df_train.rating.values, X_rel=train_blocks,
@@ -113,16 +114,10 @@ class FMRelational(BaseModel):
                 n_kept_samples=params.SAMPLES
             )
         else:
-            unique_users, user_map = np.unique(self.df_train.user_id, return_inverse=True)
-            unique_movies, movie_map = np.unique(self.df_train.movie_id, return_inverse=True)
-            user_data = self._augment_user_id(unique_users, self.user_id_to_index, self.movie_id_to_index,self.user_vs_watched)[user_map]
-            movie_data = self._augment_movie_id(unique_movies, self.movie_id_to_index, self.user_id_to_index,self.movie_vs_watched)[movie_map]
-            X_train = sparse.hstack([user_data, movie_data], format='csr')
-            hkl.dump('test.hkl',X_train)
             self.fm = myfm.MyFMOrderedProbit(rank=params.RANK)
             # rating values are set to [0, 1, 2, 3, 4]
             self.fm.fit(
-                X_train, self.df_train.rating.values - 1,
+                None, self.df_train.rating.values - 1, train_blocks,
                 group_shapes=group_shapes,
                 n_iter=params.N_ITER,
                 n_kept_samples=None
@@ -141,18 +136,23 @@ class FMRelational(BaseModel):
             predictions[predictions >= 5] = 5
             predictions[predictions <= 1] = 1
         else:
-            unique_users, user_map = np.unique(self.df_test.user_id, return_inverse=True)
-            unique_movies, movie_map = np.unique(self.df_test.movie_id, return_inverse=True)
-            user_data = self._augment_user_id(unique_users, self.user_id_to_index, self.movie_id_to_index,
-                                              self.user_vs_watched)[user_map]
-            movie_data = self._augment_movie_id(unique_movies, self.movie_id_to_index, self.user_id_to_index,
-                                                self.movie_vs_watched)[movie_map]
-            X_test = sparse.hstack([user_data, movie_data])
-
             print('Starting prediction')
-            predictions = self.fm.predict_proba(X_test)
-            # Calculate expected value over class probabilities. Rating values are now [1, 2, 3, 4, 5]
-            predictions = predictions.dot(np.arange(1, 6))
+            n = 10000  # split data frame in chunks of size 10000 to require less memory
+            list_df = [self.df_test[i:i + n] for i in range(0, self.df_test.shape[0], n)]
+            predictions = []
+            for chunk in tqdm(list_df):
+                unique_users, user_map = np.unique(chunk.user_id, return_inverse=True)
+                unique_movies, movie_map = np.unique(chunk.movie_id, return_inverse=True)
+                user_data = self._augment_user_id(unique_users, self.user_id_to_index, self.movie_id_to_index,
+                                                  self.user_vs_watched)[user_map]
+                movie_data = self._augment_movie_id(unique_movies, self.movie_id_to_index, self.user_id_to_index,
+                                                    self.movie_vs_watched)[movie_map]
+                X_test = sparse.hstack([user_data, movie_data])
+
+                prediction = self.fm.predict_proba(X_test)
+                # Calculate expected value over class probabilities. Rating values are now [1, 2, 3, 4, 5]
+                predictions.append(prediction.dot(np.arange(1, 6)))
+            predictions = np.hstack(predictions)
 
         if save_submission:
             index = [''] * len(test_users)
