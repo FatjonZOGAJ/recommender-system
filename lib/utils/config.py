@@ -15,7 +15,7 @@ config.VALIDATE = False
 
 config.MODEL = 'fm'
 
-config.DEFAULT_VALUE = 'item_mean'
+config.DEFAULT_VALUE = 'fm'
 config.SECOND_DEFAULT_VALUE = 'zero'
 config.STRATIFY = 'movies'  # or users
 

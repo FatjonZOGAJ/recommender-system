@@ -17,14 +17,18 @@ from lib.models.base_model import BaseModel
 from lib.utils.config import config
 
 params = edict()
+params.FEATURES_PATH = 'data/features/'
 params.RANK = 32
 params.N_ITER = 512  # does not work if not enough iterations
 params.SAMPLES = None  # default is params.N_ITER - 5
 params.GROUPING = True
 params.USE_IU = True  # use implicit user feature
 params.USE_II = True  # use implicit item feature
-params.USE_JACCARD = True  # Taken from "Improving Jaccard Index for Measuring Similarity in Collaborative Filtering"
+params.USE_JACCARD = False  # taken from "Improving Jaccard Index for Measuring Similarity in Collaborative Filtering"
 params.USE_JACCARDPP = params.USE_JACCARD and False  # Taken from "Improving Jaccard Index for Measuring Similarity in Collaborative Filtering", using L=3 and H=4
+params.USE_MOVIE = True
+params.USE_DISTANCES = ''  # can be either '', 'euclidean' or 'mahalanobis'
+params.USE_GENRES = not params.USE_DISTANCES
 params.ORDERED_PROBIT = False
 
 
@@ -34,17 +38,30 @@ class FMRelational(BaseModel):
         self.num_users = number_of_users
         self.num_movies = number_of_movies
         if params.USE_JACCARD:
-            if params.USE_JACCARDPP and os.path.isfile('jaccard_L_gzip.hkl') and os.path.isfile('jaccard_H_gzip.hkl'):
+            if params.USE_JACCARDPP \
+                    and os.path.isfile(params.FEATURES_PATH + 'jaccard_L_gzip.hkl') \
+                    and os.path.isfile(params.FEATURES_PATH + 'jaccard_H_gzip.hkl'):
                 logger.info('Loading dumped Jaccard matrix')
-                L = hkl.load('jaccard_L_gzip.hkl')
-                H = hkl.load('jaccard_H_gzip.hkl')
+                L = hkl.load(params.FEATURES_PATH + 'jaccard_L_gzip.hkl')
+                H = hkl.load(params.FEATURES_PATH + 'jaccard_H_gzip.hkl')
                 self.jaccard = (L + H) / 2
-            elif os.path.isfile('jaccard_gzip.hkl'):
+            elif os.path.isfile(params.FEATURES_PATH + 'jaccard_gzip.hkl'):
                 logger.info('Loading dumped Jaccard matrix')
-                self.jaccard = hkl.load('jaccard_gzip.hkl')
+                self.jaccard = hkl.load(params.FEATURES_PATH + 'jaccard_gzip.hkl')
             else:
                 logger.info('Jaccard matrix not found, recalculating values')
                 self.jaccard = None
+        if params.USE_MOVIE:
+            if params.USE_DISTANCES and os.path.isfile(params.FEATURES_PATH + f'{params.USE_DISTANCES}_matrix.npy'):
+                logger.info(f'Loading dumped {params.USE_DISTANCES} distance matrix')
+                self.movie_features = np.load(params.FEATURES_PATH + f'{params.USE_DISTANCES}_matrix.npy')
+            elif params.USE_GENRES and os.path.isfile(params.FEATURES_PATH + 'rank18_movie_categories.npy'):
+                logger.info(f'Loading dumped movie genres matrix')
+                self.movie_features = np.load(params.FEATURES_PATH + 'rank18_movie_categories.npy')
+            else:
+                logger.info('Movie feature matrix not found, either create matrix or turn off feature')
+                logger.info('Shutting down...')
+                exit(0)
 
     def fit(self, train_movies, train_users, train_predictions, **kwargs):
         self.df_train = pd.DataFrame({'user_id': train_users, 'movie_id': train_movies, 'rating': train_predictions})
@@ -82,6 +99,11 @@ class FMRelational(BaseModel):
         group_shapes.append(len(self.movie_id_to_index))  # movie ids
         if params.USE_II:
             group_shapes.append(len(self.user_id_to_index))  # all users who watched the movies
+        if params.USE_MOVIE:
+            if params.USE_GENRES:
+                group_shapes.append(18)  # rank/number of movie genres
+            elif params.USE_DISTANCES:
+                group_shapes.append(len(self.movie_id_to_index))
 
         if not params.ORDERED_PROBIT:
             self.fm = myfm.MyFMRegressor(rank=params.RANK)
@@ -107,7 +129,7 @@ class FMRelational(BaseModel):
 
         # Create RelationBlock.
         test_blocks = self._create_relational_blocks(self.df_test)
-
+        print('Starting prediction')
         if not params.ORDERED_PROBIT:
             predictions = self.fm.predict(None, test_blocks)
             predictions[predictions >= 5] = 5
@@ -128,7 +150,7 @@ class FMRelational(BaseModel):
                 index[i] = f"r{user + 1}_c{movie + 1}"
             submission = pd.DataFrame({'Id': index, 'Prediction': predictions})
             submission.to_csv(config.SUBMISSION_NAME, index=False)
-
+        print('Finishing prediction')
         return predictions
 
     def _create_relational_blocks(self, df):
@@ -180,7 +202,9 @@ class FMRelational(BaseModel):
     def _augment_movie_id(self, movie_ids, movie_id_to_index, user_id_to_index, movie_vs_watched):
         print('Preparing movie info')
         X = sparse.lil_matrix(
-            (len(movie_ids), len(movie_id_to_index) + (len(user_id_to_index) if params.USE_II else 0)))
+            (len(movie_ids), len(movie_id_to_index) + (len(user_id_to_index) if params.USE_II else 0)
+             + (len(movie_id_to_index) if params.USE_MOVIE and params.USE_DISTANCES else 0)
+             + (18 if params.USE_MOVIE and params.USE_GENRES else 0)))
         # index and movie_id are equal
         for index, movie_id in enumerate(tqdm(movie_ids)):
             if movie_id in movie_id_to_index:
@@ -191,6 +215,12 @@ class FMRelational(BaseModel):
                 for uid in watched_users:
                     if uid in user_id_to_index:
                         X[index, len(movie_id_to_index) + user_id_to_index[uid]] = normalizer
+            if params.USE_MOVIE:
+                if params.USE_DISTANCES:
+                    for mid in movie_ids:
+                        X[index, len(movie_id_to_index) + len(user_id_to_index) + mid] = self.movie_features[index, mid]
+                elif params.USE_GENRES:
+                    X[index, len(movie_id_to_index) + len(user_id_to_index) + self.movie_features[index]] = 1
         return X.tocsr()
 
 
