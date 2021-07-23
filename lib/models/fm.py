@@ -26,8 +26,8 @@ params.USE_IU = True  # use implicit user feature
 params.USE_II = True  # use implicit item feature
 params.USE_JACCARD = False  # taken from "Improving Jaccard Index for Measuring Similarity in Collaborative Filtering"
 params.USE_JACCARDPP = params.USE_JACCARD and False  # Taken from "Improving Jaccard Index for Measuring Similarity in Collaborative Filtering", using L=3 and H=4
-params.USE_MOVIE = True
-params.USE_DISTANCES = ''  # can be either '', 'euclidean' or 'mahalanobis'
+params.USE_MOVIE = False
+params.USE_DISTANCES = 'euclidean'  # can be either '', 'euclidean' or 'mahalanobis'
 params.USE_GENRES = not params.USE_DISTANCES
 params.ORDERED_PROBIT = False
 
@@ -86,9 +86,6 @@ class FMRelational(BaseModel):
             else:
                 self.user_vs_watched_H.setdefault(user_id, list()).append(movie_id)
 
-        # Create RelationBlock.
-        train_blocks = self._create_relational_blocks(self.df_train)
-
         # setup grouping, which specifies each variable group’s size.
         group_shapes = []
         group_shapes.append(len(self.user_id_to_index))  # user ids
@@ -106,6 +103,8 @@ class FMRelational(BaseModel):
                 group_shapes.append(len(self.movie_id_to_index))
 
         if not params.ORDERED_PROBIT:
+            # Create RelationBlock.
+            train_blocks = self._create_relational_blocks(self.df_train)
             self.fm = myfm.MyFMRegressor(rank=params.RANK)
             self.fm.fit(
                 None, self.df_train.rating.values, X_rel=train_blocks,
@@ -114,10 +113,17 @@ class FMRelational(BaseModel):
                 n_kept_samples=params.SAMPLES
             )
         else:
+            unique_users, user_map = np.unique(self.df_train.user_id, return_inverse=True)
+            unique_movies, movie_map = np.unique(self.df_train.movie_id, return_inverse=True)
+            user_data = self._augment_user_id(unique_users, self.user_id_to_index, self.movie_id_to_index,
+                                              self.user_vs_watched)[user_map]
+            movie_data = self._augment_movie_id(unique_movies, self.movie_id_to_index, self.user_id_to_index,
+                                                self.movie_vs_watched)[movie_map]
+            X_train = sparse.hstack([user_data, movie_data])
             self.fm = myfm.MyFMOrderedProbit(rank=params.RANK)
             # rating values are set to [0, 1, 2, 3, 4]
             self.fm.fit(
-                None, self.df_train.rating.values - 1, X_rel=train_blocks,
+                X_train, self.df_train.rating.values - 1,
                 group_shapes=group_shapes,
                 n_iter=params.N_ITER,
                 n_kept_samples=None
@@ -127,19 +133,24 @@ class FMRelational(BaseModel):
         self.df_test = pd.DataFrame(
             {'user_id': test_users, 'movie_id': test_movies, 'ratings': np.zeros([len(test_users)], dtype=int)})
 
-        # Create RelationBlock.
-        test_blocks = self._create_relational_blocks(self.df_test)
         print('Starting prediction')
         if not params.ORDERED_PROBIT:
+            # Create RelationBlock.
+            test_blocks = self._create_relational_blocks(self.df_test)
+            print('Starting prediction')
             predictions = self.fm.predict(None, test_blocks)
             predictions[predictions >= 5] = 5
             predictions[predictions <= 1] = 1
         else:
-            # Workaround for bug
-            X = []
-            X.extend([rel.data[rel.original_to_block] for rel in test_blocks])
-            X_test = sparse.hstack(X, format='csr')
+            unique_users, user_map = np.unique(self.df_test.user_id, return_inverse=True)
+            unique_movies, movie_map = np.unique(self.df_test.movie_id, return_inverse=True)
+            user_data = self._augment_user_id(unique_users, self.user_id_to_index, self.movie_id_to_index,
+                                              self.user_vs_watched)[user_map]
+            movie_data = self._augment_movie_id(unique_movies, self.movie_id_to_index, self.user_id_to_index,
+                                                self.movie_vs_watched)[movie_map]
+            X_test = sparse.hstack([user_data, movie_data])
 
+            print('Starting prediction')
             predictions = self.fm.predict_proba(X_test)
             # Calculate expected value over class probabilities. Rating values are now [1, 2, 3, 4, 5]
             predictions = predictions.dot(np.arange(1, 6))
