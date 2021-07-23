@@ -29,7 +29,7 @@ params.USE_JACCARDPP = params.USE_JACCARD and False  # Taken from "Improving Jac
 params.USE_MOVIE = False
 params.USE_DISTANCES = 'euclidean'  # can be either '', 'euclidean' or 'mahalanobis'
 params.USE_GENRES = not params.USE_DISTANCES
-params.ORDERED_PROBIT = False
+params.ORDERED_PROBIT = True
 
 
 class FMRelational(BaseModel):
@@ -115,11 +115,10 @@ class FMRelational(BaseModel):
         else:
             unique_users, user_map = np.unique(self.df_train.user_id, return_inverse=True)
             unique_movies, movie_map = np.unique(self.df_train.movie_id, return_inverse=True)
-            user_data = self._augment_user_id(unique_users, self.user_id_to_index, self.movie_id_to_index,
-                                              self.user_vs_watched)[user_map]
-            movie_data = self._augment_movie_id(unique_movies, self.movie_id_to_index, self.user_id_to_index,
-                                                self.movie_vs_watched)[movie_map]
-            X_train = sparse.hstack([user_data, movie_data])
+            user_data = self._augment_user_id(unique_users, self.user_id_to_index, self.movie_id_to_index,self.user_vs_watched)[user_map]
+            movie_data = self._augment_movie_id(unique_movies, self.movie_id_to_index, self.user_id_to_index,self.movie_vs_watched)[movie_map]
+            X_train = sparse.hstack([user_data, movie_data], format='csr')
+            hkl.dump('test.hkl',X_train)
             self.fm = myfm.MyFMOrderedProbit(rank=params.RANK)
             # rating values are set to [0, 1, 2, 3, 4]
             self.fm.fit(
@@ -171,13 +170,13 @@ class FMRelational(BaseModel):
             target.append(
                 RelationBlock(user_map,
                               self._augment_user_id(unique_users, self.user_id_to_index, self.movie_id_to_index,
-                                                    self.user_vs_watched))
+                                                    self.user_vs_watched).tocsr())
             )
             unique_movies, movie_map = np.unique(source.movie_id, return_inverse=True)
             target.append(
                 RelationBlock(movie_map,
                               self._augment_movie_id(unique_movies, self.movie_id_to_index, self.user_id_to_index,
-                                                     self.movie_vs_watched))
+                                                     self.movie_vs_watched).tocsr())
             )
 
         return blocks
@@ -208,7 +207,7 @@ class FMRelational(BaseModel):
                                 else (jaccard(user_id, uid, self.user_vs_watched_L) + jaccard(user_id, uid,
                                                                                               self.user_vs_watched_H)) / 2
 
-        return X.tocsr()
+        return X
 
     def _augment_movie_id(self, movie_ids, movie_id_to_index, user_id_to_index, movie_vs_watched):
         print('Preparing movie info')
@@ -232,7 +231,7 @@ class FMRelational(BaseModel):
                         X[index, len(movie_id_to_index) + len(user_id_to_index) + mid] = self.movie_features[index, mid]
                 elif params.USE_GENRES:
                     X[index, len(movie_id_to_index) + len(user_id_to_index) + self.movie_features[index]] = 1
-        return X.tocsr()
+        return X
 
 
 def jaccard(u, v, user_vs_watched):
