@@ -166,7 +166,7 @@ class AutoRec(BaseModel):
     def fit(self, train_movies, train_users, train_predictions, **kwargs):
         self.run()
 
-    def predict(self, test_movies, test_users, save_submission):
+    def predict(self, test_movies, test_users, save_submission, suffix='', postprocessing='default'):
         pass
 
     def predict2(self, test_R, test_mask_R):

@@ -1,3 +1,5 @@
+import numpy as np
+
 import lib.models as models
 from lib.utils import utils
 from lib.utils.config import config
@@ -20,7 +22,7 @@ def main():
         model.fit(train_movies, train_users, train_predictions,
                   val_movies=val_movies, val_users=val_users, val_predictions=val_predictions)  # iterative val score
         logger.info("Testing the model")
-        predictions = model.predict(val_movies, val_users, save_submission=False)
+        predictions = model.predict(val_movies, val_users, save_submission=False, postprocessing='round_quarters')
         logger.info('RMSE using {} is {:.4f}'.format(
             config.MODEL, get_score(predictions, target_values=val_predictions)))
     else:
@@ -34,7 +36,7 @@ def main():
                   test_movies=test_movies, test_users=test_users, test_every=config.TEST_EVERY)  # iterative test score
 
     logger.info("Creating submission file")
-    model.predict(test_movies, test_users, save_submission=True)
+    model.predict(test_movies, test_users, save_submission=True, postprocessing='round_quarters')
 
 
 if __name__ == '__main__':

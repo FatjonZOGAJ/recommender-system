@@ -5,6 +5,7 @@ import pandas as pd
 
 from lib import models
 from lib.utils.config import config
+from lib.utils.utils import roundPartial
 
 
 class BaseModel(ABC):
@@ -17,7 +18,7 @@ class BaseModel(ABC):
         pass
 
     @abstractmethod
-    def predict(self, test_movies, test_users, save_submission):
+    def predict(self, test_movies, test_users, save_submission, suffix='', postprocessing='default'):
         pass
 
     def get_kwargs_data(self, kwargs, *keys):
@@ -32,24 +33,23 @@ class BaseModel(ABC):
         if self.logger != None:
             self.logger.info(msg)
 
-    def _extract_prediction_from_full_matrix(self, reconstructed_matrix, users, movies, save_submission=True,
-                                             suffix='', transpose_matrix=False):
+    def _extract_prediction_from_full_matrix(self, reconstructed_matrix, users, movies):
         # returns predictions for the users-movies combinations specified based on a full m \times n matrix
         predictions = np.zeros(len(users))
         index = [''] * len(users)
 
         for i, (user, movie) in enumerate(zip(users, movies)):
-
             predictions[i] = reconstructed_matrix[user][movie]
             index[i] = f"r{user + 1}_c{movie + 1}"
 
-        if save_submission:
-            submission = pd.DataFrame({'Id': index, 'Prediction': predictions})
-            filename = config.SUBMISSION_NAME
-            if suffix != '':
-                filename = config.SUBMISSION_NAME[:-4] + suffix + '.csv'
-            submission.to_csv(filename, index=False)
-        return predictions
+        return predictions, index
+
+    def save_submission(self, index, predictions, suffix=''):
+        submission = pd.DataFrame({'Id': index, 'Prediction': predictions})
+        filename = config.SUBMISSION_NAME
+        if suffix != '':
+            filename = config.SUBMISSION_NAME[:-4] + suffix + '.csv'
+        submission.to_csv(filename, index=False)
 
     def create_matrices(self, train_movies, train_users, train_predictions, default_replace='mean'):
         data = np.full((config.NUM_USERS, config.NUM_MOVIES), 0, dtype=float)
@@ -57,8 +57,6 @@ class BaseModel(ABC):
         for user, movie, pred in zip(train_users, train_movies, train_predictions):
             data[user][movie] = pred
             mask[user][movie] = 1
-
-        self.log_info(f'Using {default_replace} to initialize unobserved entries as model {self.model_nr}')
 
         if default_replace == 'zero':
             pass
@@ -81,6 +79,7 @@ class BaseModel(ABC):
             data = self.use_model_to_init_unobserved(data, mask,
                                                      unobserved_initializer_model,
                                                      train_movies, train_predictions, train_users)
+        self.log_info(f'Used {default_replace} to initialize unobserved entries as model {self.model_nr}')
 
         return data, mask
 
@@ -96,9 +95,19 @@ class BaseModel(ABC):
         unobserved_initializer_model.fit(train_movies, train_users, train_predictions)
         unobserved_indices = np.argwhere(mask == 0)
         unobserved_users, unobserved_movies = [unobserved_indices[:, c] for c in [0, 1]]
-        predictions = unobserved_initializer_model.predict(unobserved_movies, unobserved_users, False)
+        predictions = unobserved_initializer_model.predict(unobserved_movies, unobserved_users, False,
+                                                           postprocessing='default')
         for i in range(len(unobserved_indices)):
             user, movie = unobserved_indices[i]
             data[user][movie] = predictions[i]
 
         return data
+
+    def postprocessing(self, predictions, type):
+        if type == 'round_quarters':
+            predictions = roundPartial(predictions, 0.25)
+        else:
+            print('postprocessing step not defined, only doing clipping')
+
+        predictions = np.clip(predictions, 1., 5.)
+        return predictions

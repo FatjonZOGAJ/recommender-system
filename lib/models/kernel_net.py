@@ -143,11 +143,14 @@ class KernelNet(BaseModel):
                     self.log_info(f'Creating submission for epoch {i} with train_err {np.sqrt(error_train)}')
                     self.predict(test_movies, test_users, True, suffix=f'_e{i}_err{np.sqrt(error_train):.2f}')
 
-    def predict(self, test_movies, test_users, save_submission, suffix=''):
+    def predict(self, test_movies, test_users, save_submission, suffix='', postprocessing='default'):
         assert (len(test_users) == len(test_movies)), "users-movies combinations specified should have equal length"
-        return self._extract_prediction_from_full_matrix(self.reconstructed_matrix.transpose(), users=test_users,
-                                                         movies=test_movies, save_submission=save_submission,
-                                                         suffix=suffix)
+        predictions, index = self._extract_prediction_from_full_matrix(self.reconstructed_matrix.transpose(), users=test_users,
+                                                         movies=test_movies)
+        predictions = self.postprocessing(predictions, postprocessing)
+        if save_submission:
+            self.save_submission(index, predictions, suffix=suffix)
+        return predictions
 
 
 def get_model(config, logger, model_nr=0):

@@ -92,3 +92,6 @@ def reset_config(config, args, valid=False):
 
 def get_score(predictions, target_values):
     return rmse(predictions, target_values)
+
+def roundPartial(value, resolution):
+    return np.round(value / float(resolution)) * resolution
