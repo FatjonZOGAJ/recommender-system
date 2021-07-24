@@ -1,9 +1,11 @@
 import numpy as np
+import pandas as pd
 
 import lib.models as models
 from lib.utils import utils
 from lib.utils.config import config
 from lib.utils.loader import extract_users_items_predictions, read_data
+from lib.utils.postprocess import postprocess_all
 from lib.utils.utils import get_score
 
 
@@ -22,9 +24,9 @@ def main():
         model.fit(train_movies, train_users, train_predictions,
                   val_movies=val_movies, val_users=val_users, val_predictions=val_predictions)  # iterative val score
         logger.info("Testing the model")
-        predictions = model.predict(val_movies, val_users, save_submission=False, postprocessing='round_quarters')
+        predictions = model.predict(val_movies, val_users, save_submission=False, postprocessing='nothing')
         logger.info('RMSE using {} is {:.4f}'.format(
-            config.MODEL, get_score(predictions, target_values=val_predictions)))
+            config.MODEL, get_score(predictions, target_values=val_predictions)))   # Note score is not preprocessed
     else:
         logger.info('Training on 100% of the data')
         train_pd, test_pd = read_data()
@@ -36,7 +38,9 @@ def main():
                   test_movies=test_movies, test_users=test_users, test_every=config.TEST_EVERY)  # iterative test score
 
     logger.info("Creating submission file")
-    model.predict(test_movies, test_users, save_submission=True, postprocessing='round_quarters')
+    predictions = model.predict(test_movies, test_users, save_submission=True, postprocessing='nothing')
+    postprocess_all(model, pd.DataFrame({'Id': utils.get_index(test_movies, test_users), 'Prediction': predictions}),
+                    config.SUBMISSION_NAME)
 
 
 if __name__ == '__main__':

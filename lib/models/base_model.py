@@ -32,6 +32,8 @@ class BaseModel(ABC):
     def log_info(self, msg):
         if self.logger != None:
             self.logger.info(msg)
+        else:
+            print(msg)
 
     def _extract_prediction_from_full_matrix(self, reconstructed_matrix, users, movies):
         # returns predictions for the users-movies combinations specified based on a full m \times n matrix
@@ -106,8 +108,12 @@ class BaseModel(ABC):
     def postprocessing(self, predictions, type):
         if type == 'round_quarters':
             predictions = roundPartial(predictions, 0.25)
+        elif type == 'nothing':
+            self.log_info('Not doing postprocessing (no clipping either)')
+            return predictions
         else:
             print('postprocessing step not defined, only doing clipping')
 
         predictions = np.clip(predictions, 1., 5.)
+        print(f'Used {type} for postprocessing')
         return predictions

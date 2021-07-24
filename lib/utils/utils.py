@@ -95,3 +95,9 @@ def get_score(predictions, target_values):
 
 def roundPartial(value, resolution):
     return np.round(value / float(resolution)) * resolution
+
+def get_index(test_movies, test_users):
+    index = [''] * len(test_users)
+    for i, (user, movie) in enumerate(zip(test_users, test_movies)):
+        index[i] = f"r{user + 1}_c{movie + 1}"
+    return index
