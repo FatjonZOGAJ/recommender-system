@@ -242,5 +242,5 @@ class AutoRec(BaseModel):
         return tf1.sqrt(tf1.reduce_sum(tf1.square(tensor)))
 
 
-def get_model(config, logger):
+def get_model(config, logger, model_nr=0):
     return AutoRec(config, logger)

@@ -11,9 +11,9 @@ config.SUBMISSION_NAME = ''
 config.TIME_STR = ''
 config.DATA_DIR = 'data/'
 config.TRAIN_SIZE = 0.9
-config.VALIDATE = False
+config.VALIDATE = True
 
-config.MODEL = 'svd'
+config.MODEL = 'ncf'
 config.DEFAULT_VALUES = ['svd', 'svd', 'svd', 'item_mean']
 
 config.STRATIFY = 'movies'  # or users
@@ -24,7 +24,7 @@ config.MAX_ITER = 2
 config.ENCODED_DIMENSION = 250
 config.LEARNING_RATE = 0.001
 config.BATCH_SIZE = 64
-config.NUM_EPOCHS = 1000
+config.NUM_EPOCHS = 1
 config.HIDDEN_DIMENSION = [500]
 config.SINGLE_LAYER = False
 
