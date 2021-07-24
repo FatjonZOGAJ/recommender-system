@@ -23,8 +23,8 @@ VERBOSE_BFGS = False
 
 
 class KernelNet(BaseModel):
-    def __init__(self, logger, is_initializer_model):
-        super().__init__(logger, is_initializer_model)
+    def __init__(self, logger, model_nr):
+        super().__init__(logger, model_nr)
 
         # Input placeholders
         self.R = tf.placeholder("float", [None, config.NUM_USERS])
@@ -110,13 +110,11 @@ class KernelNet(BaseModel):
         test_movies, test_users, test_every = self.get_kwargs_data(kwargs, 'test_movies', 'test_users', 'test_every')
         # TODO: zero better?
         data, mask = self.create_matrices(train_movies, train_users, train_predictions,
-                                          default_replace=config.DEFAULT_VALUE if not self.is_initializer_model
-                                          else config.SECOND_DEFAULT_VALUE)
+                                          default_replace=config.DEFAULT_VALUES[self.model_nr])
         data, mask = data.T, mask.T  # NOTE transpose
         if not val_movies is None:
             data_val, mask_val = self.create_matrices(val_movies, val_users, val_predictions,
-                                                      default_replace=config.DEFAULT_VALUE if not self.is_initializer_model
-                                                      else config.SECOND_DEFAULT_VALUE)
+                                                      default_replace=config.DEFAULT_VALUES[self.model_nr])
             data_val, mask_val = data_val.T, mask_val.T  # NOTE transpose
 
         self.fit_init(mask)
@@ -152,5 +150,5 @@ class KernelNet(BaseModel):
                                                          suffix=suffix)
 
 
-def get_model(config, logger, is_initializer_model=False):
-    return KernelNet(logger, is_initializer_model)
+def get_model(config, logger, model_nr=0):
+    return KernelNet(logger, model_nr)

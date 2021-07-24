@@ -5,16 +5,15 @@ from lib.utils.config import config
 
 
 class SVD(BaseModel):
-    def __init__(self, number_of_users, number_of_movies, logger, is_initializer_model):
-        super().__init__(logger, is_initializer_model)
+    def __init__(self, number_of_users, number_of_movies, logger, model_nr):
+        super().__init__(logger, model_nr)
         self.num_users = number_of_users
         self.num_movies = number_of_movies
 
     def fit(self, train_movies, train_users, train_predictions, **kwargs):
         # create full matrix of observed and unobserved values
         data, mask = self.create_matrices(train_movies, train_users, train_predictions,
-                                     default_replace=config.DEFAULT_VALUE if not self.is_initializer_model
-                                     else config.SECOND_DEFAULT_VALUE)
+                                          default_replace=config.DEFAULT_VALUES[self.model_nr])
         k_singular_values = config.K_SINGULAR_VALUES
         number_of_singular_values = min(self.num_users, self.num_movies)
         assert (k_singular_values <= number_of_singular_values), "choose correct number of singular values"
@@ -29,5 +28,5 @@ class SVD(BaseModel):
                                                          movies=test_movies, save_submission=save_submission)
 
 
-def get_model(config, logger, is_initializer_model=False):
-    return SVD(config.NUM_USERS, config.NUM_MOVIES, logger, is_initializer_model)
+def get_model(config, logger, model_nr=0):
+    return SVD(config.NUM_USERS, config.NUM_MOVIES, logger, model_nr)

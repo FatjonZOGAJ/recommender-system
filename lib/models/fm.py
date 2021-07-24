@@ -33,8 +33,8 @@ params.ORDERED_PROBIT = True
 
 
 class FMRelational(BaseModel):
-    def __init__(self, number_of_users, number_of_movies, logger, is_initializer_model):
-        super().__init__(logger, is_initializer_model)
+    def __init__(self, number_of_users, number_of_movies, logger, model_nr):
+        super().__init__(logger, model_nr)
         self.num_users = number_of_users
         self.num_movies = number_of_movies
         if params.USE_JACCARD:
@@ -242,5 +242,5 @@ def jaccard(u, v, user_vs_watched):
     return len(set_u & set_v) / len(set_u | set_v)
 
 
-def get_model(config, logger, is_initializer_model=False):
-    return FMRelational(config.NUM_USERS, config.NUM_MOVIES, logger, is_initializer_model)
+def get_model(config, logger, model_nr=0):
+    return FMRelational(config.NUM_USERS, config.NUM_MOVIES, logger, model_nr)

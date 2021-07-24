@@ -8,9 +8,9 @@ from lib.utils.config import config
 
 
 class BaseModel(ABC):
-    def __init__(self, logger, is_initializer_model=False):
+    def __init__(self, logger, model_nr=0):
         self.logger = logger
-        self.is_initializer_model = is_initializer_model
+        self.model_nr = model_nr
 
     @abstractmethod
     def fit(self, train_movies, train_users, train_predictions, **kwargs):
@@ -58,6 +58,8 @@ class BaseModel(ABC):
             data[user][movie] = pred
             mask[user][movie] = 1
 
+        self.log_info(f'Using {default_replace} to initialize unobserved entries as model {self.model_nr}')
+
         if default_replace == 'zero':
             pass
         elif default_replace == 'mean':
@@ -74,9 +76,8 @@ class BaseModel(ABC):
             if default_replace not in models.models:
                 raise NotImplementedError('Add other replacement methods')
 
-            unobserved_initializer_model = models.models[default_replace].get_model(config, logger=None,
-                                                                                    is_initializer_model=True)
-            self.log_info(f'Using {unobserved_initializer_model} to initialize unobserved entries')
+            unobserved_initializer_model = models.models[default_replace].get_model(config, logger=self.logger,
+                                                                                    model_nr=self.model_nr + 1)
             data = self.use_model_to_init_unobserved(data, mask,
                                                      unobserved_initializer_model,
                                                      train_movies, train_predictions, train_users)
