@@ -191,25 +191,19 @@ class AutoRec(BaseModel):
         with tf1.Session(config=self.configuration) as self.sess:
             self.run()
 
-    def predict(self, test_movies, test_users, save_submission):
+    def predict(self, test_movies, test_users, save_submission, suffix='', postprocessing='default'):
         Cost, Decoder = self.sess.run(
             [self.cost, self.Decoder],
             feed_dict={self.input_R: self.R,
                        self.input_mask_R: self.mask_R})
 
         Estimated_R = Decoder.clip(min=1, max=5)
-        return self._extract_prediction_from_full_matrix(Estimated_R, test_users,
-                                                         test_movies, save_submission=save_submission,
-                                                         transpose_matrix=True)
-
-    def predict2(self, test_R, test_mask_R):
-        Cost, Decoder = self.sess.run(
-            [self.cost, self.Decoder],
-            feed_dict={self.input_R: test_R,
-                       self.input_mask_R: test_mask_R})
-
-        Estimated_R = Decoder.clip(min=1, max=5)
-        return Estimated_R
+        predictions, index = self._extract_prediction_from_full_matrix(Estimated_R, users=test_users,
+                                                                       movies=test_movies)
+        predictions = self.postprocessing(predictions, postprocessing)
+        if save_submission:
+            self.save_submission(index, predictions, suffix)
+        return predictions
 
     def make_records(self):
         if not os.path.exists(self.result_path):

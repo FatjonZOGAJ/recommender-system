@@ -26,7 +26,7 @@ def call_autoencoder_rmse_single_layer(train_users, train_movies, train_predicti
         model = models[config.MODEL].get_model(config, logger)
         model.fit(train_movies, train_users, train_predictions,
                   val_movies=val_movies, val_users=val_users, val_predictions=val_predictions)  # iterative val score
-        predictions = model.predict(val_movies, val_users, save_submission=False)
+        predictions = model.predict(val_movies, val_users, save_submission=False, postprocessing='default')
         rmse = get_score(predictions, target_values=val_predictions)
         final_rmse.append(rmse)
 
@@ -54,7 +54,7 @@ def call_deep_autoencoder(train_users, train_movies, train_predictions, val_user
         model = models[config.MODEL].get_model(config, logger)
         model.fit(train_movies, train_users, train_predictions,
                   val_movies=val_movies, val_users=val_users, val_predictions=val_predictions)  # iterative val score
-        predictions = model.predict(val_movies, val_users, save_submission=False)
+        predictions = model.predict(val_movies, val_users, save_submission=False, postprocessing='default')
         rmse = get_score(predictions, target_values=val_predictions)
         one_layer_rmse.append(rmse)
 
@@ -65,7 +65,7 @@ def call_deep_autoencoder(train_users, train_movies, train_predictions, val_user
         model = models[config.MODEL].get_model(config, logger)
         model.fit(train_movies, train_users, train_predictions,
                   val_movies=val_movies, val_users=val_users, val_predictions=val_predictions)  # iterative val score
-        predictions = model.predict(val_movies, val_users, save_submission=False)
+        predictions = model.predict(val_movies, val_users, save_submission=False, postprocessing='default')
         rmse = get_score(predictions, target_values=val_predictions)
         two_layer_rmse.append(rmse)
 
@@ -96,7 +96,7 @@ def call_rmse_embedding(train_users, train_movies, train_predictions, val_users,
         model = models[config.MODEL].get_model(config, logger)
         model.fit(train_movies, train_users, train_predictions,
               val_movies=val_movies, val_users=val_users, val_predictions=val_predictions)  # iterative val score
-        predictions = model.predict(val_movies, val_users, save_submission=False)
+        predictions = model.predict(val_movies, val_users, save_submission=False, postprocessing='default')
         rmse = get_score(predictions, target_values=val_predictions)
         svd_rmse.append(rmse)
     rmse_values.append(svd_rmse)

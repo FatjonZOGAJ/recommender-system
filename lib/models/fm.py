@@ -123,7 +123,7 @@ class FMRelational(BaseModel):
                 n_kept_samples=None
             )
 
-    def predict(self, test_movies, test_users, save_submission):
+    def predict(self, test_movies, test_users, save_submission, suffix='', postprocessing='default'):
         self.df_test = pd.DataFrame(
             {'user_id': test_users, 'movie_id': test_movies, 'ratings': np.zeros([len(test_users)], dtype=int)})
 
@@ -153,6 +153,8 @@ class FMRelational(BaseModel):
                 # Calculate expected value over class probabilities. Rating values are now [1, 2, 3, 4, 5]
                 predictions.append(prediction.dot(np.arange(1, 6)))
             predictions = np.hstack(predictions)
+
+        predictions = self.postprocessing(predictions, postprocessing)
 
         if save_submission:
             index = [''] * len(test_users)

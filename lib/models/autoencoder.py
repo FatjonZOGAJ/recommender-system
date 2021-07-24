@@ -22,11 +22,14 @@ class Encoder(nn.Module):
                 nn.ReLU(),
             )
         else:
-            input_layer = nn.Sequential(nn.Linear(in_features=input_dimension, out_features=config.HIDDEN_DIMENSION[0]), nn.ReLU())
+            input_layer = nn.Sequential(nn.Linear(in_features=input_dimension, out_features=config.HIDDEN_DIMENSION[0]),
+                                        nn.ReLU())
             len_hidden_dimensions = len(config.HIDDEN_DIMENSION)
             if len_hidden_dimensions != 0:
-                hidden_layers = [nn.Sequential(nn.Linear(in_features=config.HIDDEN_DIMENSION[i], out_features=config.HIDDEN_DIMENSION[(i+1)] if i == len_hidden_dimensions else encoded_dimension),
-                                        nn.ReLU()) for i in range(len_hidden_dimensions)]
+                hidden_layers = [nn.Sequential(nn.Linear(in_features=config.HIDDEN_DIMENSION[i],
+                                                         out_features=config.HIDDEN_DIMENSION[(
+                                                                     i + 1)] if i == len_hidden_dimensions else encoded_dimension),
+                                               nn.ReLU()) for i in range(len_hidden_dimensions)]
                 layers = [input_layer, *hidden_layers]
             self.model = nn.Sequential(*layers)
 
@@ -43,14 +46,15 @@ class Decoder(nn.Module):
                 nn.ReLU(),
             )
         else:
-            input_layer = nn.Sequential(nn.Linear(in_features=encoded_dimension, out_features=config.HIDDEN_DIMENSION[-1]),
-                                        nn.ReLU())
+            input_layer = nn.Sequential(
+                nn.Linear(in_features=encoded_dimension, out_features=config.HIDDEN_DIMENSION[-1]),
+                nn.ReLU())
             len_hidden_dimensions = len(config.HIDDEN_DIMENSION)
             if len_hidden_dimensions != 0:
                 hidden_layers = [nn.Sequential(nn.Linear(in_features=config.HIDDEN_DIMENSION[i],
                                                          out_features=config.HIDDEN_DIMENSION[(
-                                                                     i - 1)] if i != 0 else output_dimensions),
-                                               nn.ReLU()) for i in range(len_hidden_dimensions-1, -1, -1)]
+                                                                 i - 1)] if i != 0 else output_dimensions),
+                                               nn.ReLU()) for i in range(len_hidden_dimensions - 1, -1, -1)]
                 layers = [input_layer, *hidden_layers]
             self.model = nn.Sequential(*layers)
 
@@ -106,18 +110,18 @@ class AutoEncoder(BaseModel):
                 step += 1
 
             if epoch % 5 == 0:
-                reconstructed_matrix = self.reconstruct_whole_matrix()
-                predictions = self._extract_prediction_from_full_matrix(reconstructed_matrix, kwargs['val_users'],
-                                                                        kwargs['val_movies'], save_submission=False,
-                                                                        transpose_matrix=True)
+                predictions = self.predict(kwargs['val_movies'], kwargs['val_users'], save_submission=False, )
                 reconstruction_rmse = get_score(predictions, kwargs['val_predictions'])
                 self.logger.info('At epoch {:3d} loss is {:.4f}'.format(epoch, reconstruction_rmse))
 
-    def predict(self, test_movies, test_users, save_submission):
+    def predict(self, test_movies, test_users, save_submission, suffix='', postprocessing='default'):
         reconstructed_matrix = self.reconstruct_whole_matrix()
-        return self._extract_prediction_from_full_matrix(reconstructed_matrix, test_users,
-                                                         test_movies, save_submission=save_submission,
-                                                         transpose_matrix=True)
+        predictions, index = self._extract_prediction_from_full_matrix(reconstructed_matrix, test_users,
+                                                                       test_movies)
+        predictions = self.postprocessing(predictions, postprocessing)
+        if save_submission:
+            self.save_submission(index, predictions, suffix=suffix)
+        return predictions
 
     def reconstruct_whole_matrix(self):
         data_reconstructed = np.zeros((self.num_users, self.num_movies))
@@ -125,7 +129,8 @@ class AutoEncoder(BaseModel):
         with torch.no_grad():
             for i in range(0, self.num_users, self.batch_size):
                 upper_bound = min(i + self.batch_size, self.num_users)
-                data_reconstructed[i:upper_bound] = self.autoencoder_network(self.data_torch[i:upper_bound]).detach().cpu().numpy()
+                data_reconstructed[i:upper_bound] = self.autoencoder_network(
+                    self.data_torch[i:upper_bound]).detach().cpu().numpy()
 
         return data_reconstructed
 
