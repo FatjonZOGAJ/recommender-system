@@ -112,7 +112,7 @@ class BaseModel(ABC):
             self.log_info('Not doing postprocessing (no clipping either)')
             return predictions
         else:
-            print('postprocessing step not defined, only doing clipping')
+            print('Postprocessing step not defined, only doing clipping', end='. ')
 
         predictions = np.clip(predictions, 1., 5.)
         print(f'Used {type} for postprocessing')
