@@ -29,7 +29,7 @@ params.USE_JACCARDPP = params.USE_JACCARD and False  # Taken from "Improving Jac
 params.USE_MOVIE = False
 params.USE_DISTANCES = 'euclidean'  # can be either '', 'euclidean' or 'mahalanobis'
 params.USE_GENRES = not params.USE_DISTANCES
-params.ORDERED_PROBIT = True
+params.ORDERED_PROBIT = False
 
 
 class FMRelational(BaseModel):

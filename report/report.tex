@@ -4,6 +4,7 @@
 %\usepackage{balance}
 \usepackage{url, amsmath, amssymb}
 \usepackage{graphicx}    % For figure environment
+\usepackage{natbib}    % For figure environment
 
 \newcommand{\spacing}{\hspace{1cm}}
 \begin{document}
@@ -22,12 +23,21 @@
 
 
     \section{Introduction}
+    %TODO write generally about collaborative filtering/recommender system
+    %TODO write about related problem of netflix price and movielense
+    %TODO Maybe take a look into "On the difficulta on evaluating Baselines" -> old proposed methods perform surprisingly well, also as information on general methods
 
 
     \section{Related Work}
+    %TODO might not be necessary only for text filler if needed
 
 
     \section{Models and Methods}
+
+    %TODO mention papers with code and the used baselines from there and from the collab notebook
+    %TODO Maybe take a look into "On the difficulta on evaluating Baselines"
+
+    %TODO add clipping techniques, initialization of missing values, and if done de-biasing
 
     \subsection{Singular Value Decomposition}
 
@@ -35,7 +45,14 @@
     
     \subsection{K-Means Clustering}
     
-    In order to provide additional information for models we implement clustering and that way simulate the information about movie categories as in the MovieLens Dataset TODO: CITE. First we initialize the matrix using FM:TODO. Afterwards, we perform Singular Value Decomposition with the rank that showed best results (TODO ref the plot). We get the embeddings using the following expression: assuming $A=U\Sigma V^T$ then embeddings matrix is equal to $\Sigma _k ^{\frac{1}{2}} V_k ^T$. Finally, after obtaining the k-rank movie embeddings we search for the optimal number of clusters in K-Means clustering. We visualize the clusters in 2 dimensions. Since, visualizing in two dimensions does not easily distinct the optimal number of clusters we choose 18 as in the MovieLens dataset as the number of clusters. Picture \ref{movie_category_distribution} shows two peaks in movie categories while other categories look uniformly distributed.
+    In order to provide additional information for models we implement clustering and that way simulate the information
+    about movie categories as in the MovieLens Dataset TODO: CITE. First we initialize the matrix using FM:TODO.
+    Afterwards, we perform Singular Value Decomposition with the rank that showed best results (TODO ref the plot).
+    We get the embeddings using the following expression: assuming $A=U\Sigma V^T$ then embeddings matrix is equal to $\Sigma _k ^{\frac{1}{2}} V_k ^T$.
+    Finally, after obtaining the k-rank movie embeddings we search for the optimal number of clusters in K-Means clustering.
+    We visualize the clusters in 2 dimensions. Since, visualizing in two dimensions does not easily distinct the optimal
+    number of clusters we choose 18 as in the MovieLens dataset as the number of clusters. Picture \ref{movie_category_distribution}
+    shows two peaks in movie categories while other categories look uniformly distributed.
     
     \begin{figure}\label{movie_category_distribution}
         \includegraphics[width=\columnwidth]{figures/movie_category_distribution.png}
@@ -46,23 +63,41 @@
     \subsection{Autoencoder}
     An autoencoder is a neural network that is trained to attempt to copy its input to its output. 
     Internally, it has a hidden layer $\textbf{h} \in \mathbb{R}^k$ that describes a code used to represent the input.
-    The network may be viewed as consisting of two parts: an encoder function $f: \mathbb{R} ^d \rightarrow \mathbb{R} ^k$ and a decoder that produces a reconstruction $g: \mathbb{R} ^k \rightarrow \mathbb{R} ^d$ \cite{Goodfellow-et-al-2016}. Autoencoders have proven to achieve good results in collaborative filtering \cite{inproceedings}. We examine the user-based autoencoder as opposed to item-based autoencoder which achieved a good score in \cite{inproceedings}. Both encoder and decoder consist of feedforward neural networks with ReLU activation functions. We train the model by minimizing the squared reconstruction loss. Important part of the implementation is the fact that inputs are partially observed and therefore we only update those weights that are associated with observed inputs during backpropagation. 
-    We found that when both encoder and decoder consist of one layer increasing the encoded dimension up to 500 makes the score better. Furthermore, we have examined the effect of compositionality. Using only two layers in encoder and decoder already performs better than any single layer autoencoder. 
+    The network may be viewed as consisting of two parts: an encoder function $f: \mathbb{R} ^d \rightarrow \mathbb{R} ^k$ and a
+    decoder that produces a reconstruction $g: \mathbb{R} ^k \rightarrow \mathbb{R} ^d$ \cite{Goodfellow-et-al-2016}. Autoencoders
+    have proven to achieve good results in collaborative filtering \cite{inproceedings}. We examine the user-based
+    autoencoder as opposed to item-based autoencoder which achieved a good score in \cite{inproceedings}. Both encoder
+    and decoder consist of feedforward neural networks with ReLU activation functions. We train the model by minimizing
+    the squared reconstruction loss. Important part of the implementation is the fact that inputs are partially observed
+    and therefore we only update those weights that are associated with observed inputs during backpropagation.
+    We found that when both encoder and decoder consist of one layer increasing the encoded dimension up to 500 makes
+    the score better. Furthermore, we have examined the effect of compositionality. Using only two layers in encoder
+    and decoder already performs better than any single layer autoencoder.
     
     \subsection{Neural Collaborative Filtering}
-    Neural Collaborative Filtering approach as proposed by He et al. \cite{DBLP:journals/corr/abs-1708-05031}, tries to jointly learn user-item latent representations as well as the prediction depending on the interactions between different users and items. The network's inputs are indices of users and items. Firstly, an embedding layer maps each user and aeach item to its corresponding latent vector representation. Output of the embedding layers is then concatenated and passed on through fully connected feedforward layers with ReLU activation functions. Finally, output of the network represents the rating associated with the inputted user and item. Network is trained minimizing the mean squared error loss between the predicted and target rating. TODO: erase? Further, improvements would be implementing the network as a classification task between the movie rating rather then regressing the predicted rating.
+    Neural Collaborative Filtering approach as proposed by He et al. \cite{DBLP:journals/corr/abs-1708-05031}, tries to
+    jointly learn user-item latent representations as well as the prediction depending on the interactions between
+    different users and items. The network's inputs are indices of users and items. Firstly, an embedding layer maps
+    each user and aeach item to its corresponding latent vector representation. Output of the embedding layers is then
+    concatenated and passed on through fully connected feedforward layers with ReLU activation functions. Finally,
+    output of the network represents the rating associated with the inputted user and item. Network is trained minimizing
+    the mean squared error loss between the predicted and target rating. TODO: erase? Further, improvements would be
+    implementing the network as a classification task between the movie rating rather then regressing the predicted rating.
 
     \subsection{Kernel Net}
 
-    \subsection{Factorization Machines}
+    \subsection{Bayesian Factorization Machines}
+    For our final baseline, we explored Bayesian Factorization Machines \textbf{(BFM)} which are Bayesian variants of the former known Factorization Machines \textbf{(FM)}, introduced by \citeauthor{rendle_factorization_2010}\cite{rendle_factorization_2010}.
+    FMs
 
     \subsubsection{User Features}
     \cite{lee_improving_2017}
 
-
     \subsubsection{Movie Features}
 
-    \subsection{Ensembles}
+    \subsubsection{Iterative SVD}
+
+    \subsubsection{Ensembles}
 
 
     \section{Results and Discussion}
@@ -83,7 +118,7 @@
     on a draft of each table or figure, the one or two key results you
     want to address in the text portion of the results.
     The information from the figures is
-    summarized in Table.\cite{anderson04}
+    summarized in Table.
 
 
 

@@ -11,9 +11,9 @@ config.SUBMISSION_NAME = ''
 config.TIME_STR = ''
 config.DATA_DIR = 'data/'
 config.TRAIN_SIZE = 0.9
-config.VALIDATE = True
+config.VALIDATE = False
 
-config.MODEL = 'ncf'
+config.MODEL = 'fm'
 config.DEFAULT_VALUES = ['svd', 'svd', 'svd', 'item_mean']
 
 config.STRATIFY = 'movies'  # or users
