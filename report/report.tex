@@ -3,7 +3,8 @@
 %\usepackage{times}
 %\usepackage{balance}
 \usepackage{url}
-\usepackage{graphicx}    % For figure environment
+\usepackage{graphicx}
+\usepackage{natbib}    % For figure environment
 
 \newcommand{\spacing}{\hspace{1cm}}
 \begin{document}
@@ -22,12 +23,21 @@
 
 
     \section{Introduction}
+    %TODO write generally about collaborative filtering/recommender system
+    %TODO write about related problem of netflix price and movielense
+    %TODO Maybe take a look into "On the difficulta on evaluating Baselines" -> old proposed methods perform surprisingly well, also as information on general methods
 
 
     \section{Related Work}
+    %TODO might not be necessary only for text filler if needed
 
 
     \section{Models and Methods}
+
+    %TODO mention papers with code and the used baselines from there and from the collab notebook
+    %TODO Maybe take a look into "On the difficulta on evaluating Baselines"
+
+    %TODO add clipping techniques, initialization of missing values, and if done de-biasing
 
     \subsection{Singular Value Decomposition}
 
@@ -37,15 +47,18 @@
 
     \subsection{Kernel Net}
 
-    \subsection{Factorization Machines}
+    \subsection{Bayesian Factorization Machines}
+    For our final baseline, we explored Bayesian Factorization Machines \textbf{(BFM)} which are Bayesian variants of the former known Factorization Machines \textbf{(FM)}, introduced by \citeauthor{rendle_factorization_2010}\cite{rendle_factorization_2010}.
+    FMs
 
     \subsubsection{User Features}
     \cite{lee_improving_2017}
 
-
     \subsubsection{Movie Features}
 
-    \subsection{Ensembles}
+    \subsubsection{Iterative SVD}
+
+    \subsubsection{Ensembles}
 
 
     \section{Results and Discussion}
@@ -66,7 +79,7 @@
     on a draft of each table or figure, the one or two key results you
     want to address in the text portion of the results.
     The information from the figures is
-    summarized in Table.\cite{anderson04}
+    summarized in Table.
 
 
 
