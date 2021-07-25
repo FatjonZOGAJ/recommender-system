@@ -184,7 +184,6 @@ class FMRelational(BaseModel):
         return blocks
 
     def _augment_user_id(self, user_ids, user_id_to_index, movie_id_to_index, user_vs_watched):
-        print('Preparing user info')
         X = sparse.lil_matrix((len(user_ids), len(user_id_to_index) + (len(movie_id_to_index) if params.USE_IU else 0) +
                                (len(user_id_to_index) if params.USE_JACCARD else 0)))
         # index and user_id are equal
@@ -212,7 +211,6 @@ class FMRelational(BaseModel):
         return X
 
     def _augment_movie_id(self, movie_ids, movie_id_to_index, user_id_to_index, movie_vs_watched):
-        print('Preparing movie info')
         X = sparse.lil_matrix(
             (len(movie_ids), len(movie_id_to_index) + (len(user_id_to_index) if params.USE_II else 0)
              + (len(movie_id_to_index) if params.USE_MOVIE and params.USE_DISTANCES else 0)
