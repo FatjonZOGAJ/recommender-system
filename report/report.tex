@@ -4,6 +4,8 @@
 %\usepackage{balance}
 \usepackage{url, amsmath, amssymb}
 \usepackage{graphicx}    % For figure environment
+\usepackage{textcomp}
+\usepackage{amsfonts}
 
 \newcommand{\spacing}{\hspace{1cm}}
 \begin{document}
@@ -25,6 +27,7 @@
     %TODO write generally about collaborative filtering/recommender system
     %TODO write about related problem of netflix price and movielense
     %TODO Maybe take a look into "On the difficulta on evaluating Baselines" -> old proposed methods perform surprisingly well, also as information on general methods
+    %TODO general mathmatical formulation of the problem, maybe see past reports
 
 
     \section{Related Work}
@@ -84,6 +87,17 @@
     Regarding, the implementation of our baseline, we utilize a package named \textit{myFM} \cite{noauthor_myfm_nodate} which employs Gibbs sampling for approximate inference of the posterior.
     Besides this standard variant of BFMs, multiple additions have been made by means of exploiting additional implicit information about users, items, and temporal dynamics \cite{rendle_scaling_2013,koren_factorization_2008,koren_collaborative_2009}.
     In our implementation, we incorporated most of these as well, omitting the temporal dynamics due to the absence of this information in our provided dataset.
+    The two additions are defined as follows:
+    \begin{enumerate}
+        \item Implicit User Feature (Bayesian SVD++) $\Leftrightarrow$ all items consumed by user $u$:
+        $$w_u=|\{(u,i): (u,i) \in \Omega\}|$$
+        \item Implicit Item Feature (Bayesian SVD++ flipped) $\Leftrightarrow$ all users that consumed item $i$:
+        $$v_i=|\{(u,i): (u,i) \in \Omega\}|$$
+    \end{enumerate}
+
+    In addition to these implicit features, datasets used for benchmarking models such as BFMs usually contain further information, e.g. in the case of movie recommendations, about the genre of a movie, friends of a user, and and many more.
+    Given that those pieces of information seem relevant as well, we wanted to incorporate such information.
+    Hence, we come up with tw
 
     \subsubsection{User Features}
     \cite{lee_improving_2017}
