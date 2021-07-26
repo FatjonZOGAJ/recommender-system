@@ -72,7 +72,7 @@
     \subsection{Kernel Net}
 
     \subsection{Bayesian Factorization Machines}
-    For our final baseline, we explored Bayesian Factorization Machines \textbf{(BFM)} which are Bayesian variants of the former known Factorization Machines \textbf{(FM)}\cite{rendle_factorization_2010}.
+    For our final baseline, we explored Bayesian Factorization Machines \textbf{(BFM)} which are Bayesian variants of the former known Factorization Machines \textbf{(FM)} \cite{rendle_factorization_2010}.
     In its core, FMs build upon the advantages of Support Vector Machines \textbf{(SVM)} but use a factorized parametrization instead of a dense one.
     With this parametrization, FMs are able to estimate all possible interactions between entries of $\mathbf{X}$ even in setting where the data matrix $\mathbf{X}$ is highly sparse.
     Similarly to SVMs with a polynomial kernel, the FM model equation which captures all single and pairwise interactions, can be formulated as follows:
@@ -86,21 +86,38 @@
     This fully Bayesian treatment of FMs does not only increase the accuracy of such a model but also omits the need of exhaustive parameter tuning \cite{freudenthaler_bayesian_2011}.
     Regarding, the implementation of our baseline, we utilize a package named \textit{myFM} \cite{noauthor_myfm_nodate} which employs Gibbs sampling for approximate inference of the posterior.
     Besides this standard variant of BFMs, multiple additions have been made by means of exploiting additional implicit information about users, items, and temporal dynamics \cite{rendle_scaling_2013,koren_factorization_2008,koren_collaborative_2009}.
-    In our implementation, we incorporated most of these as well, omitting the temporal dynamics due to the absence of this information in our provided dataset.
-    The two additions are defined as follows:
+    In our implementation, we incorporated most of these as well, omitting temporal dynamics due to the absence of this information in our provided dataset.
+    The two additional features are defined as follows:
     \begin{enumerate}
         \item Implicit User Feature (Bayesian SVD++) $\Leftrightarrow$ all items consumed by user $u$:
-        $$w_u=|\{(u,i): (u,i) \in \Omega\}|$$
+        $$\mathbf{V}_u=\frac{\Omega_u}{\sqrt{|\{(u,i): (u,i) \in \Omega_u\}|}}$$
         \item Implicit Item Feature (Bayesian SVD++ flipped) $\Leftrightarrow$ all users that consumed item $i$:
-        $$v_i=|\{(u,i): (u,i) \in \Omega\}|$$
+        $$\mathbf{W}_i=\frac{\Omega^T_i}{\sqrt{|\{(u,i): (u,i) \in \Omega^T_i\}|}}$$
     \end{enumerate}
+    After one-hot-encoding users $\mathbf{U}$ and items $\mathbf{I}$, denoted as the identity matrix $I_k$ with corresponding dimension $k$, a single entry in our dataset would have the following form:
+    $$\mathbf{x}_{ui} = [(I_n)_u,\mathbf{V}_u,(I_m)_i,\mathbf{W}_i, r_{ui}]$$
 
-    In addition to these implicit features, datasets used for benchmarking models such as BFMs usually contain further information, e.g. in the case of movie recommendations, about the genre of a movie, friends of a user, and and many more.
-    Given that those pieces of information seem relevant as well, we wanted to incorporate such information.
-    Hence, we come up with tw
+    Additionally, datasets commonly used in the setting of collaborative filtering such as the MovieLens dataset include much more detailed information on users/items.
+    In the setting of movie recommendations, for instance, the genre or the release date of a movie, a timestamp of when the user gave the rating, or user specific information such as who is friends with whom might be included.
+    As we found that these details might be greatly beneficial for our prediction task, we created features which resemble the previously mentioned ones based on the limited data we were provided.
+    Here, we concentrated mainly on two aspects, calculating the similarity between users to imitate the "friends of a user" feature, and clustering a movie embedding space to create a "movie genre" feature.
 
     \subsubsection{User Features}
-    \cite{lee_improving_2017}
+    Regarding the additional user features in the form of similarity measures between two users, we looked at different variants of the Jaccard index, the standard variant and an improved version of it \cite{lee_improving_2017}.
+    The standard Jaccard index measures the similarity between two users u and v as follows:
+    $$\text{Jac}(u,v)=\frac{|\mathbf{I}_u \cap \mathbf{I}_v|}{|\mathbf{I}_u \cup \mathbf{I}_v|}$$
+    Furthermore, we experimented with an improved version of the Jaccard index.
+    Here, the set of items $\mathbf{I}_u$ a user $u$ has consumed is subdivided into three parts $L,M,$ and $H$ with two boundaries $L_{bd}$ and $H_{bd}$.
+    Given these boundaries the sets are formulated as follows:
+    \begin{align*}
+          &\mathbf{I}_{L,u}=\{i \in \mathbf{I}_u : r_{u,i} \leq L_{bd}\}\\
+          &\mathbf{I}_{M,u}=\{i \in \mathbf{I}_u : L_{bd} < r_{u,i} < H_{bd}\}\\
+          &\mathbf{I}_{H,u}=\{i \in \mathbf{I}_u : H_{bd} \leq r_{u,i}\}\\
+    \end{align*}
+    The improved Jaccard index with these definied subsets is denoted as follows:
+    $$\text{Jac}_{LMH}=\frac{1}{3}(\text{Jac}_L(u,v) + \text{Jac}_M(u,v) + \text{Jac}_H(u,v))$$
+    According to the authors the bound $L_{bd} = 3$ and $H_{bd}=4$ yielded the best results on the MovieLens dataset.
+    As such, we set the same bounds, effectively splitting into two instead of three sets.
 
     \subsubsection{Movie Features}
     In order to provide additional information for models, we implement clustering and that way simulate the information
@@ -117,6 +134,8 @@
         \includegraphics[width=\columnwidth]{figures/movie_category_distribution.png}
         \caption{Distribution of movie categories between 18 categories as in MovieLens dataset.}
     \end{figure}
+
+    With these additional user/item features, we append to our feature vector $\mathbf{x}_{ui}$ a dense vector of user similarities from user $u$ to every other user, or the item feature which is either the one-hot-encoded cluster of item $i$ or a dense vector of Euclidean/Mahalanobis distances from item $i$ to every other item.
 
     \subsubsection{Iterative SVD}
 
