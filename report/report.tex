@@ -4,7 +4,6 @@
 %\usepackage{balance}
 \usepackage{url, amsmath, amssymb}
 \usepackage{graphicx}    % For figure environment
-\usepackage{natbib}    % For figure environment
 
 \newcommand{\spacing}{\hspace{1cm}}
 \begin{document}
@@ -42,26 +41,9 @@
     \subsection{Singular Value Decomposition}
 
     \subsection{Non-Negative Matrix Factorization}
-    
-    \subsection{K-Means Clustering}
-    
-    In order to provide additional information for models we implement clustering and that way simulate the information
-    about movie categories as in the MovieLens Dataset TODO: CITE. First we initialize the matrix using FM:TODO.
-    Afterwards, we perform Singular Value Decomposition with the rank that showed best results (TODO ref the plot).
-    We get the embeddings using the following expression: assuming $A=U\Sigma V^T$ then embeddings matrix is equal to $\Sigma _k ^{\frac{1}{2}} V_k ^T$.
-    Finally, after obtaining the k-rank movie embeddings we search for the optimal number of clusters in K-Means clustering.
-    We visualize the clusters in 2 dimensions. Since, visualizing in two dimensions does not easily distinct the optimal
-    number of clusters we choose 18 as in the MovieLens dataset as the number of clusters. Picture \ref{movie_category_distribution}
-    shows two peaks in movie categories while other categories look uniformly distributed.
-    
-    \begin{figure}\label{movie_category_distribution}
-        \includegraphics[width=\columnwidth]{figures/movie_category_distribution.png}
-        \caption{Distribution of movie categories between 18 categories as in MovieLens dataset.}
-    \end{figure}
-
 
     \subsection{Autoencoder}
-    An autoencoder is a neural network that is trained to attempt to copy its input to its output. 
+    An autoencoder is a neural network that is trained to attempt to copy its input to its output.
     Internally, it has a hidden layer $\textbf{h} \in \mathbb{R}^k$ that describes a code used to represent the input.
     The network may be viewed as consisting of two parts: an encoder function $f: \mathbb{R} ^d \rightarrow \mathbb{R} ^k$ and a
     decoder that produces a reconstruction $g: \mathbb{R} ^k \rightarrow \mathbb{R} ^d$ \cite{Goodfellow-et-al-2016}. Autoencoders
@@ -73,12 +55,12 @@
     We found that when both encoder and decoder consist of one layer increasing the encoded dimension up to 500 makes
     the score better. Furthermore, we have examined the effect of compositionality. Using only two layers in encoder
     and decoder already performs better than any single layer autoencoder.
-    
+
     \subsection{Neural Collaborative Filtering}
     Neural Collaborative Filtering approach as proposed by He et al. \cite{DBLP:journals/corr/abs-1708-05031}, tries to
     jointly learn user-item latent representations as well as the prediction depending on the interactions between
     different users and items. The network's inputs are indices of users and items. Firstly, an embedding layer maps
-    each user and aeach item to its corresponding latent vector representation. Output of the embedding layers is then
+    each user and each item to its corresponding latent vector representation. Output of the embedding layers is then
     concatenated and passed on through fully connected feedforward layers with ReLU activation functions. Finally,
     output of the network represents the rating associated with the inputted user and item. Network is trained minimizing
     the mean squared error loss between the predicted and target rating. TODO: erase? Further, improvements would be
@@ -87,13 +69,40 @@
     \subsection{Kernel Net}
 
     \subsection{Bayesian Factorization Machines}
-    For our final baseline, we explored Bayesian Factorization Machines \textbf{(BFM)} which are Bayesian variants of the former known Factorization Machines \textbf{(FM)}, introduced by \citeauthor{rendle_factorization_2010}\cite{rendle_factorization_2010}.
-    FMs
+    For our final baseline, we explored Bayesian Factorization Machines \textbf{(BFM)} which are Bayesian variants of the former known Factorization Machines \textbf{(FM)}\cite{rendle_factorization_2010}.
+    In its core, FMs build upon the advantages of Support Vector Machines \textbf{(SVM)} but use a factorized parametrization instead of a dense one.
+    With this parametrization, FMs are able to estimate all possible interactions between entries of $\mathbf{X}$ even in setting where the data matrix $\mathbf{X}$ is highly sparse.
+    Similarly to SVMs with a polynomial kernel, the FM model equation which captures all single and pairwise interactions, can be formulated as follows:
+
+    $$\hat{y}(\mathbf{x})=w_0+\sum^n_{i=1}w_ix_i + \sum^n_{i=1}\sum^n_{j=i+1}\langle \mathbf{v_i},\mathbf{v_j} \rangle x_ix_j$$
+
+    Here, $v_i$ denotes a vector in $\mathbb{R}^k$ which describes the $i$-th variable with $k$ dimensions and $\langle \mathbf{v_i},\mathbf{v_j} \rangle$ the interaction between the variables $i$ and $j$.
+    Instead of using a fixed weight $w_{ij}$, this factorization via the dot product allows FMs to predict parameters for related interaction, e.g. different users but same movie.
+    In the non-Bayesian setting, model parameters are optimized with stochastic gradient descent.
+    Opposed to this are Bayesian variants of FMs where model parameters are estimated via maximum a posteriori estimation by means of Markov Chain Monte Carlo methods for approximate inference \cite{salakhutdinov_bayesian_2008}.
+    This fully Bayesian treatment of FMs does not only increase the accuracy of such a model but also omits the need of exhaustive parameter tuning \cite{freudenthaler_bayesian_2011}.
+    Regarding, the implementation of our baseline, we utilize a package named \textit{myFM} \cite{noauthor_myfm_nodate} which employs Gibbs sampling for approximate inference of the posterior.
+    Besides this standard variant of BFMs, multiple additions have been made by means of exploiting additional implicit information about users, items, and temporal dynamics \cite{rendle_scaling_2013,koren_factorization_2008,koren_collaborative_2009}.
+    In our implementation, we incorporated most of these as well, omitting the temporal dynamics due to the absence of this information in our provided dataset.
 
     \subsubsection{User Features}
     \cite{lee_improving_2017}
 
     \subsubsection{Movie Features}
+    In order to provide additional information for models, we implement clustering and that way simulate the information
+    about movie categories as in the MovieLens Dataset TODO: CITE. First we initialize the matrix using FM:TODO.
+    Afterwards, we perform Singular Value Decomposition with the rank that showed best results (TODO ref the plot).
+    We get the embeddings using the following expression: assuming $A=U\Sigma V^T$ then the matrix corresponding to the movie embeddings is equal to $\Sigma _k ^{\frac{1}{2}} V_k ^T$.
+    Finally, after obtaining the k-rank movie embeddings we search for the optimal number of clusters in K-Means clustering.
+    We visualize the clusters in 2 dimensions. Since, visualizing in two dimensions does not easily distinct the optimal
+    number of clusters we choose 18 as in the MovieLens dataset as the number of clusters. Figure \ref{movie_category_distribution}
+    shows two peaks in movie categories while other categories look uniformly distributed.
+
+    \begin{figure}
+        \label{movie_category_distribution}
+        \includegraphics[width=\columnwidth]{figures/movie_category_distribution.png}
+        \caption{Distribution of movie categories between 18 categories as in MovieLens dataset.}
+    \end{figure}
 
     \subsubsection{Iterative SVD}
 
