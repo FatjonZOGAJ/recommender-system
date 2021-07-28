@@ -32,5 +32,6 @@ class SVD(BaseModel):
         return predictions
 
 
+
 def get_model(config, logger, model_nr=0):
     return SVD(config.NUM_USERS, config.NUM_MOVIES, logger, model_nr)

@@ -1,7 +1,6 @@
 '''
 Adapted from https://github.com/gtshs2/Autorec
 '''
-import argparse
 import math
 import os
 import time
@@ -12,14 +11,58 @@ import tensorflow as tf
 from lib.models.base_model import BaseModel
 
 tf1 = tf.compat.v1
-tf1.disable_v2_behavior()
+
 
 class AutoRec(BaseModel):
-    def __init__(self, config, logger):
+    def __init__(self, sess, args, num_users, num_items, R, mask_R, C, train_R, train_mask_R, test_R, test_mask_R,
+                 num_train_ratings, num_test_ratings, user_train_set, item_train_set, user_test_set, item_test_set,
+                 result_path, logger):
 
         super().__init__(logger)
-        assert config.VALIDATE, "use validation mode"
-        self.config = config
+        self.sess = sess
+        self.args = args
+
+        self.num_users = num_users
+        self.num_items = num_items
+
+        self.R = R
+        self.mask_R = mask_R
+        self.C = C
+        self.train_R = train_R
+        self.train_mask_R = train_mask_R
+        self.test_R = test_R
+        self.test_mask_R = test_mask_R
+        self.num_train_ratings = num_train_ratings
+        self.num_test_ratings = num_test_ratings
+
+        self.user_train_set = user_train_set
+        self.item_train_set = item_train_set
+        self.user_test_set = user_test_set
+        self.item_test_set = item_test_set
+
+        self.hidden_neuron = args.hidden_neuron
+        self.train_epoch = args.train_epoch
+        self.batch_size = args.batch_size
+        self.num_batch = int(math.ceil(self.num_users / float(self.batch_size)))
+
+        self.base_lr = args.base_lr
+        self.optimizer_method = args.optimizer_method
+        self.display_step = args.display_step
+        self.random_seed = args.random_seed
+
+        self.global_step = tf1.Variable(0, trainable=False)
+        self.decay_epoch_step = args.decay_epoch_step
+        self.decay_step = self.decay_epoch_step * self.num_batch
+        self.lr = tf1.train.exponential_decay(self.base_lr, self.global_step,
+                                                   self.decay_step, 0.96, staircase=True)
+        self.lambda_value = args.lambda_value
+
+        self.train_cost_list = []
+        self.test_cost_list = []
+        self.test_rmse_list = []
+
+        self.result_path = result_path
+        self.grad_clip = args.grad_clip
 
     def run(self):
         self.prepare_model()
@@ -121,89 +164,19 @@ class AutoRec(BaseModel):
             print ("=" * 100)
 
     def fit(self, train_movies, train_users, train_predictions, **kwargs):
-        parser = argparse.ArgumentParser(description='I-AutoRec ')
-        parser.add_argument('--hidden_neuron', type=int, default=500)
-        parser.add_argument('--lambda_value', type=float, default=1)
-
-        parser.add_argument('--train_epoch', type=int, default=2000)
-        parser.add_argument('--batch_size', type=int, default=100)
-
-        parser.add_argument('--optimizer_method', choices=['Adam', 'RMSProp'], default='Adam')
-        parser.add_argument('--grad_clip', type=bool, default=False)
-        parser.add_argument('--base_lr', type=float, default=1e-3)
-        parser.add_argument('--decay_epoch_step', type=int, default=50,
-                            help="decay the learning rate for each n epochs")
-
-        parser.add_argument('--random_seed', type=int, default=1000)
-        parser.add_argument('--display_step', type=int, default=1)
-
-        self.args = parser.parse_args()
-        tf1.set_random_seed(self.args.random_seed)
-        np.random.seed(self.args.random_seed)
-
-        self.configuration = tf1.ConfigProto()
-        self.configuration.gpu_options.allow_growth = True
-
-        val_users, val_movies, val_predictions = kwargs['val_users'], kwargs['val_movies'], kwargs['val_predictions']
-        users = np.concatenate((train_users, kwargs['val_users']))
-        movies = np.concatenate((train_movies, kwargs['val_movies']))
-        predictions = np.concatenate((train_predictions, kwargs['val_predictions']))
-
-        self.num_users = self.config.NUM_USERS
-        self.num_items = self.config.NUM_MOVIES
-
-        self.R, self.mask_R = self.create_matrices(movies, users, predictions, default_replace='zero')
-        self.C = self.mask_R.copy()
-        self.train_R, self.train_mask_R = self.create_matrices(train_movies, train_users, train_predictions, default_replace='zero')
-        self.test_R, self.test_mask_R = self.create_matrices(val_movies, val_users, val_predictions, default_replace='zero')
-        self.num_train_ratings = len(train_users)
-        self.num_test_ratings = len(val_users)
-
-        self.user_train_set = set(train_users)
-        self.item_train_set = set(train_movies)
-        self.user_test_set = set(val_users)
-        self.item_test_set = set(val_movies)
-
-        self.hidden_neuron = self.args.hidden_neuron
-        self.train_epoch = self.args.train_epoch
-        self.batch_size = self.args.batch_size
-        self.num_batch = int(math.ceil(self.num_users / float(self.batch_size)))
-
-        self.base_lr = self.args.base_lr
-        self.optimizer_method = self.args.optimizer_method
-        self.display_step = self.args.display_step
-        self.random_seed = self.args.random_seed
-
-        self.global_step = tf1.Variable(0, trainable=False)
-        self.decay_epoch_step = self.args.decay_epoch_step
-        self.decay_step = self.decay_epoch_step * self.num_batch
-        self.lr = tf1.train.exponential_decay(self.base_lr, self.global_step,
-                                              self.decay_step, 0.96, staircase=True)
-        self.lambda_value = self.args.lambda_value
-
-        self.train_cost_list = []
-        self.test_cost_list = []
-        self.test_rmse_list = []
-
-        self.result_path = "output/autorec/"
-        self.grad_clip = self.args.grad_clip
-
-        with tf1.Session(config=self.configuration) as self.sess:
-            self.run()
+        self.run()
 
     def predict(self, test_movies, test_users, save_submission, suffix='', postprocessing='default'):
+        pass
+
+    def predict2(self, test_R, test_mask_R):
         Cost, Decoder = self.sess.run(
             [self.cost, self.Decoder],
-            feed_dict={self.input_R: self.R,
-                       self.input_mask_R: self.mask_R})
+            feed_dict={self.input_R: test_R,
+                       self.input_mask_R: test_mask_R})
 
         Estimated_R = Decoder.clip(min=1, max=5)
-        predictions, index = self._extract_prediction_from_full_matrix(Estimated_R, users=test_users,
-                                                                       movies=test_movies)
-        predictions = self.postprocessing(predictions, postprocessing)
-        if save_submission:
-            self.save_submission(index, predictions, suffix)
-        return predictions
+        return Estimated_R
 
     def make_records(self):
         if not os.path.exists(self.result_path):
@@ -240,7 +213,3 @@ class AutoRec(BaseModel):
 
     def l2_norm(self,tensor):
         return tf1.sqrt(tf1.reduce_sum(tf1.square(tensor)))
-
-
-def get_model(config, logger, model_nr=0):
-    return AutoRec(config, logger)

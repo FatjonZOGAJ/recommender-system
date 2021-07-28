@@ -15,7 +15,8 @@ from collections import defaultdict
 
 from lib.models.base_model import BaseModel
 from lib.utils.config import config
-
+from lib.utils.loader import extract_users_items_predictions
+from lib.utils import utils
 params = edict()
 params.FEATURES_PATH = 'data/features/'
 params.RANK = 32
@@ -31,39 +32,51 @@ params.USE_DISTANCES = 'euclidean'  # can be either '', 'euclidean' or 'mahalano
 params.USE_GENRES = not params.USE_DISTANCES
 params.ORDERED_PROBIT = False
 
+logger = utils.init(seed=config.RANDOM_STATE)
+logger.info(f'Using {config.MODEL} model for prediction')
+
 
 class FMRelational(BaseModel):
-    def __init__(self, number_of_users, number_of_movies, logger, model_nr):
-        super().__init__(logger, model_nr)
-        self.num_users = number_of_users
-        self.num_movies = number_of_movies
+    def __init__(self,SAMPLES=params.SAMPLES, RANK=params.RANK):
+        super().__init__(logger=logger)
+        
+        params.SAMPLES = SAMPLES
+        params.RANK = RANK
+
         if params.USE_JACCARD:
             if params.USE_JACCARDPP \
                     and os.path.isfile(params.FEATURES_PATH + 'jaccard_L_gzip.hkl') \
                     and os.path.isfile(params.FEATURES_PATH + 'jaccard_H_gzip.hkl'):
-                logger.info('Loading dumped Jaccard matrix')
                 L = hkl.load(params.FEATURES_PATH + 'jaccard_L_gzip.hkl')
                 H = hkl.load(params.FEATURES_PATH + 'jaccard_H_gzip.hkl')
                 self.jaccard = (L + H) / 2
             elif os.path.isfile(params.FEATURES_PATH + 'jaccard_gzip.hkl'):
-                logger.info('Loading dumped Jaccard matrix')
                 self.jaccard = hkl.load(params.FEATURES_PATH + 'jaccard_gzip.hkl')
             else:
-                logger.info('Jaccard matrix not found, recalculating values')
                 self.jaccard = None
         if params.USE_MOVIE:
             if params.USE_DISTANCES and os.path.isfile(params.FEATURES_PATH + f'{params.USE_DISTANCES}_matrix.npy'):
-                logger.info(f'Loading dumped {params.USE_DISTANCES} distance matrix')
                 self.movie_features = np.load(params.FEATURES_PATH + f'{params.USE_DISTANCES}_matrix.npy')
             elif params.USE_GENRES and os.path.isfile(params.FEATURES_PATH + 'rank18_movie_categories.npy'):
-                logger.info(f'Loading dumped movie genres matrix')
                 self.movie_features = np.load(params.FEATURES_PATH + 'rank18_movie_categories.npy')
             else:
-                logger.info('Movie feature matrix not found, either create matrix or turn off feature')
-                logger.info('Shutting down...')
+
                 exit(0)
 
-    def fit(self, train_movies, train_users, train_predictions, **kwargs):
+    def set_params(self, SAMPLES, RANK):
+
+        params.SAMPLES = SAMPLES
+        params.RANK = RANK
+        return self
+
+
+    def get_params(self, deep):
+
+        return {"SAMPLES": params.SAMPLES, "RANK":params.RANK}
+
+    def fit(self, train_pd, dummy_y, **kwargs):
+        
+        train_users, train_movies, train_predictions = extract_users_items_predictions(train_pd)
         self.df_train = pd.DataFrame({'user_id': train_users, 'movie_id': train_movies, 'rating': train_predictions})
 
         self.unique_user_ids = np.unique(self.df_train.user_id)
@@ -123,7 +136,9 @@ class FMRelational(BaseModel):
                 n_kept_samples=None
             )
 
-    def predict(self, test_movies, test_users, save_submission, suffix='', postprocessing='default'):
+    def predict(self, test_pd, save_submission=False, suffix='', postprocessing='default'):
+
+        test_users, test_movies, _ = extract_users_items_predictions(test_pd)
         self.df_test = pd.DataFrame(
             {'user_id': test_users, 'movie_id': test_movies, 'ratings': np.zeros([len(test_users)], dtype=int)})
 
@@ -184,6 +199,7 @@ class FMRelational(BaseModel):
         return blocks
 
     def _augment_user_id(self, user_ids, user_id_to_index, movie_id_to_index, user_vs_watched):
+        print('Preparing user info')
         X = sparse.lil_matrix((len(user_ids), len(user_id_to_index) + (len(movie_id_to_index) if params.USE_IU else 0) +
                                (len(user_id_to_index) if params.USE_JACCARD else 0)))
         # index and user_id are equal
@@ -211,6 +227,7 @@ class FMRelational(BaseModel):
         return X
 
     def _augment_movie_id(self, movie_ids, movie_id_to_index, user_id_to_index, movie_vs_watched):
+        print('Preparing movie info')
         X = sparse.lil_matrix(
             (len(movie_ids), len(movie_id_to_index) + (len(user_id_to_index) if params.USE_II else 0)
              + (len(movie_id_to_index) if params.USE_MOVIE and params.USE_DISTANCES else 0)
@@ -243,4 +260,4 @@ def jaccard(u, v, user_vs_watched):
 
 
 def get_model(config, logger, model_nr=0):
-    return FMRelational(config.NUM_USERS, config.NUM_MOVIES, logger, model_nr)
+    return FMRelational()
