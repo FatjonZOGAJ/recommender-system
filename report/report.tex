@@ -13,6 +13,7 @@
 
     \author{
     Filip Batur\spacing Patrik Okanovic\spacing Rafael Sterzinger\spacing Fatjon Zogaj\\
+    Group: Terminators\\
     ETH Zurich, Switzerland
     }
 
@@ -25,9 +26,19 @@
 
     \section{Introduction}
     %TODO write generally about collaborative filtering/recommender system
+    We look at the task of Collaborative Filtering which is a technique widely used in recommender systems.
+    Recommender systems primarily aim at enabling customers to find items of potential interest.
+    Some possible usages of this are movie recommendations on Netflix, 'Made for you' playlists on spotify or 'Other people also bought' ads on Amazon.
+    Collaborative Filtering makes use of existing knowledge of the general user body and combines this with the specific user information regarding other items to present him/her new recommendations.
     %TODO write about related problem of netflix price and movielense
     %TODO Maybe take a look into "On the difficulta on evaluating Baselines" -> old proposed methods perform surprisingly well, also as information on general methods
     %TODO general mathmatical formulation of the problem, maybe see past reports
+
+    For this problem constellation our dataset consists of rating from 10,000 users on 1,000 movies.
+    We note that not every user (or any for that matter) has rated every movie.
+    With 1,176,952 rating we have a sparsity level of around 12 percent.
+    This information is of further importance as many models and techniques depend on the initialization of non-observed techniques.
+
 
 
     \section{Related Work}
@@ -35,6 +46,7 @@
 
 
     \section{Models and Methods}
+    In the following section we describe the different methods we used combined with our baseline models and our final best model.
 
     %TODO mention papers with code and the used baselines from there and from the collab notebook
     %TODO Maybe take a look into "On the difficulta on evaluating Baselines"

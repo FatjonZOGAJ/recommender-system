@@ -6,6 +6,7 @@ import tensorflow as tf
 from easydict import EasyDict as edict
 
 from lib.models.base_model import BaseModel
+from lib.utils.config import config
 
 params = edict()
 params.HIDDEN_UNITS = 500
@@ -13,20 +14,17 @@ params.TESTING = False
 params.LAMBDA_2 = 90.
 params.LAMBDA_SPARSITY = 0.023
 params.N_LAYERS = 2
-params.OUTPUT_EVERY = 50 if not params.TESTING else 5  # evaluate performance on test set; breaks l-bfgs loop
+params.MAX_ITER = 50 if not params.TESTING else 5  # evaluate performance on test set; breaks l-bfgs loop
 params.N_EPOCHS = 3  # N_LAYERS * 10
-params.VERBOSE_BFGS = False
+params.VERBOSE_DISP = False
 
 
 class KernelNet(BaseModel):
     def __init__(self, config, logger, model_nr):
         super().__init__(logger, model_nr)
         self.config = config
-
-        # Input placeholders
         self.R = tf.placeholder("float", [None, self.config.NUM_USERS])
 
-        # Instantiate network
         y = self.R
         reg_losses = None
         for i in range(params.N_LAYERS):
@@ -38,45 +36,19 @@ class KernelNet(BaseModel):
         self.reg_losses = reg_losses + reg_loss
 
     def fit_init(self, train_mask):
-        # Compute loss (symbolic)
         diff = train_mask * (self.R - self.prediction)
         sqE = tf.nn.l2_loss(diff)
         loss = sqE + self.reg_losses
 
         # Instantiate L-BFGS Optimizer
         self.optimizer = tf.contrib.opt.ScipyOptimizerInterface(loss, method='L-BFGS-B',
-                                                                options={'maxiter': params.OUTPUT_EVERY,
-                                                                         'disp': params.VERBOSE_BFGS,
+                                                                options={'maxiter': params.MAX_ITER,
+                                                                         'disp': params.VERBOSE_DISP,
                                                                          'maxcor': 10},
                                                                 )
 
-    # define network functions
-    def kernel(self, u, v):
-        """
-        Sparsifying kernel function
-
-        :param u: input vectors [n_in, 1, n_dim]
-        :param v: output vectors [1, hidden_units, n_dim]
-        :return: input to output connection matrix
-        """
-        dist = tf.norm(u - v, ord=2, axis=2)
-        hat = tf.maximum(0., 1. - dist ** 2)
-        return hat
-
     def kernel_layer(self, x, hidden_units=500, n_dim=5, activation=tf.nn.sigmoid, lambda_s=0.013,
                      lambda_2=60., name=''):
-        """
-        a kernel sparsified layer
-
-        :param x: input [batch, channels]
-        :param hidden_units: number of hidden units
-        :param n_dim: number of dimensions to embed for kernelization
-        :param activation: output activation
-        :param name: layer name for scoping
-        :return: layer output, regularization term
-        """
-
-        # define variables
         with tf.variable_scope(name):
             W = tf.get_variable('W', [x.shape[1], hidden_units])
             n_in = x.get_shape().as_list()[1]
@@ -84,19 +56,17 @@ class KernelNet(BaseModel):
             v = tf.get_variable('v', initializer=tf.random.truncated_normal([1, hidden_units, n_dim], 0., 1e-3))
             b = tf.get_variable('b', [hidden_units])
 
-        # compute sparsifying kernel
-        # as u and v move further from each other for some given pair of neurons, their connection
-        # decreases in strength and eventually goes to zero.
-        w_hat = self.kernel(u, v)
+        # kernel
+        dist = tf.norm(u - v, ord=2, axis=2)
+        w_hat = tf.maximum(0., 1. - dist ** 2)
 
-        # compute regularization terms
+        # regularization
         sparse_reg = tf.contrib.layers.l2_regularizer(lambda_s)
         sparse_reg_term = tf.contrib.layers.apply_regularization(sparse_reg, [w_hat])
 
         l2_reg = tf.contrib.layers.l2_regularizer(lambda_2)
         l2_reg_term = tf.contrib.layers.apply_regularization(l2_reg, [W])
 
-        # compute output
         W_eff = W * w_hat
         y = tf.matmul(x, W_eff) + b
         y = activation(y)
