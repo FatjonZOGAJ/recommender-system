@@ -1,10 +1,34 @@
 import matplotlib.pyplot as plt
-
+import numpy as np
 from lib.models import models
 from lib.utils import utils
 from lib.utils.config import config
 from lib.utils.loader import extract_users_items_predictions, read_data
 from lib.utils.utils import get_score
+
+
+def plot_heatmap(matrix, x_values, y_values, show_values=False):
+    fig, ax = plt.subplots()
+    im = ax.imshow(matrix, interpolation='nearest', cmap='winter')
+    ax.figure.colorbar(im, ax=ax)
+
+    ax.set(xticks=np.arange(len(x_values)),
+           yticks=np.arange(len(y_values)),
+           xticklabels=x_values, yticklabels=y_values,
+           title="Heatmap",
+           ylabel='y_values',
+           xlabel='x_values')
+
+    if show_values:
+        fmt = '.2f'
+        thresh = matrix.max() / 2.
+        for i in range(len(x_values)):
+            for j in range(len(y_values)):
+                ax.text(j, i, format(matrix[i, j], fmt),
+                        ha="center", va="center",
+                        color="white" if matrix[i, j] > thresh else "black")
+
+    fig.savefig('heatmap.png')
 
 
 def plot_autoencoder_rmse_single_layer(encoded_dimension, rmse, path):
@@ -110,13 +134,15 @@ def call_rmse_embedding(train_users, train_movies, train_predictions, val_users,
 
 
 if __name__ == '__main__':
-    logger = utils.init(seed=config.RANDOM_STATE)
-    logger.info(f'Using {config.MODEL} model for prediction')
-    # Load data
-    train_pd, val_pd, test_pd = read_data()
-    train_users, train_movies, train_predictions = extract_users_items_predictions(train_pd)
-    val_users, val_movies, val_predictions = extract_users_items_predictions(val_pd)
-    test_users, test_movies, _ = extract_users_items_predictions(test_pd)
+    # logger = utils.init(seed=config.RANDOM_STATE)
+    # logger.info(f'Using {config.MODEL} model for prediction')
+    # # Load data
+    # train_pd, val_pd, test_pd = read_data()
+    # train_users, train_movies, train_predictions = extract_users_items_predictions(train_pd)
+    # val_users, val_movies, val_predictions = extract_users_items_predictions(val_pd)
+    # test_users, test_movies, _ = extract_users_items_predictions(test_pd)
+    #
+    # call_rmse_embedding(train_users, train_movies, train_predictions, val_users, val_movies, val_predictions)
+    # call_autoencoder_rmse_single_layer(train_users, train_movies, train_predictions, val_users, val_movies, val_predictions)
 
-    call_rmse_embedding(train_users, train_movies, train_predictions, val_users, val_movies, val_predictions)
-    call_autoencoder_rmse_single_layer(train_users, train_movies, train_predictions, val_users, val_movies, val_predictions)
+    plot_heatmap(np.random.rand(3,2), [1, 2], [4, 5, 6])
