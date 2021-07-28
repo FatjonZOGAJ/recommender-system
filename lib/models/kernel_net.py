@@ -8,77 +8,46 @@ from easydict import EasyDict as edict
 from lib.models.base_model import BaseModel
 from lib.utils.config import config
 
-# TODO: add to params
-
 TESTING = False
 
 params = edict()
 params.HIDDEN_UNITS = 500
-LAMBDA_2 = 90.
-LAMBDA_SPARSITY = 0.023
-N_LAYERS = 2
-OUTPUT_EVERY = 50 if not TESTING else 5  # evaluate performance on test set; breaks l-bfgs loop
-N_EPOCHS = 3  # N_LAYERS * 10
-VERBOSE_BFGS = False
+params.LAMBDA_2 = 90.
+params.LAMBDA_SPARSITY = 0.023
+params.N_LAYERS = 2
+params.MAX_ITER = 50 if not TESTING else 5  # evaluate performance on test set; breaks l-bfgs loop
+params.N_EPOCHS = 3  # N_LAYERS * 10
+params.VERBOSE_DISP = False
 
 
 class KernelNet(BaseModel):
     def __init__(self, logger, model_nr):
         super().__init__(logger, model_nr)
-
-        # Input placeholders
         self.R = tf.placeholder("float", [None, config.NUM_USERS])
 
-        # Instantiate network
         y = self.R
         reg_losses = None
-        for i in range(N_LAYERS):
-            y, reg_loss = self.kernel_layer(y, params.HIDDEN_UNITS, name=str(i), lambda_2=LAMBDA_2,
-                                            lambda_s=LAMBDA_SPARSITY)
+        for i in range(params.N_LAYERS):
+            y, reg_loss = self.kernel_layer(y, params.HIDDEN_UNITS, name=str(i), lambda_2=params.LAMBDA_2,
+                                            lambda_s=params.LAMBDA_SPARSITY)
             reg_losses = reg_loss if reg_losses is None else reg_losses + reg_loss
         self.prediction, reg_loss = self.kernel_layer(y, config.NUM_USERS, activation=tf.identity, name='out',
-                                                      lambda_2=LAMBDA_2, lambda_s=LAMBDA_SPARSITY)
+                                                      lambda_2=params.LAMBDA_2, lambda_s=params.LAMBDA_SPARSITY)
         self.reg_losses = reg_losses + reg_loss
 
     def fit_init(self, train_mask):
-        # Compute loss (symbolic)
         diff = train_mask * (self.R - self.prediction)
         sqE = tf.nn.l2_loss(diff)
         loss = sqE + self.reg_losses
 
-        # Instantiate L-BFGS Optimizer
-        self.optimizer = tf.contrib.opt.ScipyOptimizerInterface(loss, options={'maxiter': OUTPUT_EVERY,
-                                                                               'disp': VERBOSE_BFGS,
+        # L-BFGS Optimizer
+        self.optimizer = tf.contrib.opt.ScipyOptimizerInterface(loss, options={'maxiter': params.MAX_ITER,
+                                                                               'disp': params.VERBOSE_DISP,
                                                                                'maxcor': 10},
                                                                 method='L-BFGS-B')
 
-    # define network functions
-    def kernel(self, u, v):
-        """
-        Sparsifying kernel function
-
-        :param u: input vectors [n_in, 1, n_dim]
-        :param v: output vectors [1, hidden_units, n_dim]
-        :return: input to output connection matrix
-        """
-        dist = tf.norm(u - v, ord=2, axis=2)
-        hat = tf.maximum(0., 1. - dist ** 2)
-        return hat
-
     def kernel_layer(self, x, hidden_units=500, n_dim=5, activation=tf.nn.sigmoid, lambda_s=0.013,
                      lambda_2=60., name=''):
-        """
-        a kernel sparsified layer
-
-        :param x: input [batch, channels]
-        :param hidden_units: number of hidden units
-        :param n_dim: number of dimensions to embed for kernelization
-        :param activation: output activation
-        :param name: layer name for scoping
-        :return: layer output, regularization term
-        """
-
-        # define variables
         with tf.variable_scope(name):
             W = tf.get_variable('W', [x.shape[1], hidden_units])
             n_in = x.get_shape().as_list()[1]
@@ -86,19 +55,17 @@ class KernelNet(BaseModel):
             v = tf.get_variable('v', initializer=tf.random.truncated_normal([1, hidden_units, n_dim], 0., 1e-3))
             b = tf.get_variable('b', [hidden_units])
 
-        # compute sparsifying kernel
-        # as u and v move further from each other for some given pair of neurons, their connection
-        # decreases in strength and eventually goes to zero.
-        w_hat = self.kernel(u, v)
+        # kernel
+        dist = tf.norm(u - v, ord=2, axis=2)
+        w_hat = tf.maximum(0., 1. - dist ** 2)
 
-        # compute regularization terms
+        # regularization
         sparse_reg = tf.contrib.layers.l2_regularizer(lambda_s)
         sparse_reg_term = tf.contrib.layers.apply_regularization(sparse_reg, [w_hat])
 
         l2_reg = tf.contrib.layers.l2_regularizer(lambda_2)
         l2_reg_term = tf.contrib.layers.apply_regularization(l2_reg, [W])
 
-        # compute output
         W_eff = W * w_hat
         y = tf.matmul(x, W_eff) + b
         y = activation(y)
@@ -108,7 +75,6 @@ class KernelNet(BaseModel):
         val_movies, val_users, val_predictions = self.get_kwargs_data(kwargs, 'val_movies', 'val_users',
                                                                       'val_predictions')
         test_movies, test_users, test_every = self.get_kwargs_data(kwargs, 'test_movies', 'test_users', 'test_every')
-        # TODO: zero better?
         data, mask = self.create_matrices(train_movies, train_users, train_predictions,
                                           default_replace=config.DEFAULT_VALUES[self.model_nr])
         data, mask = data.T, mask.T  # NOTE transpose
@@ -123,7 +89,7 @@ class KernelNet(BaseModel):
         init = tf.global_variables_initializer()
         with tf.Session() as sess:
             sess.run(init)
-            for i in range(N_EPOCHS):
+            for i in range(params.N_EPOCHS):
                 self.optimizer.minimize(sess, feed_dict={self.R: data})  # do maxiter optimization steps
                 pre = sess.run(self.prediction, feed_dict={self.R: data})  # predict ratings
 
@@ -145,8 +111,9 @@ class KernelNet(BaseModel):
 
     def predict(self, test_movies, test_users, save_submission, suffix='', postprocessing='default'):
         assert (len(test_users) == len(test_movies)), "users-movies combinations specified should have equal length"
-        predictions, index = self._extract_prediction_from_full_matrix(self.reconstructed_matrix.transpose(), users=test_users,
-                                                         movies=test_movies)
+        predictions, index = self._extract_prediction_from_full_matrix(self.reconstructed_matrix.transpose(),
+                                                                       users=test_users,
+                                                                       movies=test_movies)
         predictions = self.postprocessing(predictions, postprocessing)
         if save_submission:
             self.save_submission(index, predictions, suffix=suffix)
