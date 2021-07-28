@@ -5,6 +5,7 @@ from lib.utils import utils
 from lib.utils.config import config
 from lib.utils.loader import extract_users_items_predictions, read_data
 from lib.utils.utils import get_score
+import time
 
 
 def plot_heatmap(matrix, x_values, y_values, show_values=False):
@@ -106,7 +107,7 @@ def plot_rmse_embedding(embedding_dimensions, rmse_values, markers, colors, labe
 
 
 def call_rmse_embedding(train_users, train_movies, train_predictions, val_users, val_movies, val_predictions):
-    embedding_dimensions = [2, 30, 70, 120]
+    embedding_dimensions = [2, 4, 10, 16, 32, 64, 128]
     rmse_values = []
     markers = []
     colors = []
@@ -133,16 +134,47 @@ def call_rmse_embedding(train_users, train_movies, train_predictions, val_users,
     plot_rmse_embedding(embedding_dimensions, rmse_values, markers, colors, labels, 'rmse_embedding.png')
 
 
+def plot_rmse_validation(epochs, rmse_values, colors, labels, path):
+    for i in range(len(rmse_values)):
+        plt.plot(epochs, rmse_values[i], c=colors[i], label=labels[i])
+    plt.legend()
+    plt.xlabel('Epoch')
+    plt.ylabel('Validation RMSE')
+    plt.savefig(path)
+
+
+def call_rmse_validation(train_users, train_movies, train_predictions, val_users, val_movies, val_predictions):
+    model_names = ['autoencoder', 'autorec', 'ncf', 'kernel_net']
+    rmse_values = []
+    times = []
+    for model_name in model_names:
+        config.MODEL = model_name
+        model = models[config.MODEL].get_model(config, logger)
+        start = time.time()
+        model.fit(train_movies, train_users, train_predictions,
+                  val_movies=val_movies, val_users=val_users, val_predictions=val_predictions)
+        end = time.time()
+        times.append(end-start)
+        np.save(model_name + '.npy', np.array(model.validation_rmse))
+        rmse_values.append(model.validation_rmse)
+    np.save('validation_rmse.npy', np.array(rmse_values))
+    np.save('times.npy', times)
+    colors = ['red', 'blue', 'green', 'orange']
+    plot_rmse_validation(range(0, config.NUM_EPOCHS, config.TEST_EVERY), rmse_values, colors, model_names, 'validation_plot.ong')
+
+
 if __name__ == '__main__':
-    # logger = utils.init(seed=config.RANDOM_STATE)
-    # logger.info(f'Using {config.MODEL} model for prediction')
-    # # Load data
-    # train_pd, val_pd, test_pd = read_data()
-    # train_users, train_movies, train_predictions = extract_users_items_predictions(train_pd)
-    # val_users, val_movies, val_predictions = extract_users_items_predictions(val_pd)
-    # test_users, test_movies, _ = extract_users_items_predictions(test_pd)
-    #
+    logger = utils.init(seed=config.RANDOM_STATE)
+    logger.info(f'Using {config.MODEL} model for prediction')
+    # Load data
+    train_pd, val_pd, test_pd = read_data()
+    train_users, train_movies, train_predictions = extract_users_items_predictions(train_pd)
+    val_users, val_movies, val_predictions = extract_users_items_predictions(val_pd)
+    test_users, test_movies, _ = extract_users_items_predictions(test_pd)
+
+    call_rmse_validation(train_users, train_movies, train_predictions, val_users, val_movies, val_predictions)
+
     # call_rmse_embedding(train_users, train_movies, train_predictions, val_users, val_movies, val_predictions)
     # call_autoencoder_rmse_single_layer(train_users, train_movies, train_predictions, val_users, val_movies, val_predictions)
-
-    plot_heatmap(np.random.rand(3,2), [1, 2], [4, 5, 6])
+    #
+    # plot_heatmap(np.random.rand(3,2), [1, 2], [4, 5, 6])

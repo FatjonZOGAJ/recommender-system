@@ -12,6 +12,7 @@ class BaseModel(ABC):
     def __init__(self, logger, model_nr=0):
         self.logger = logger
         self.model_nr = model_nr
+        self.validation_rmse = []
 
     @abstractmethod
     def fit(self, train_movies, train_users, train_predictions, **kwargs):

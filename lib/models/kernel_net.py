@@ -23,8 +23,9 @@ VERBOSE_BFGS = False
 
 
 class KernelNet(BaseModel):
-    def __init__(self, logger, model_nr):
+    def __init__(self, logger, config, model_nr):
         super().__init__(logger, model_nr)
+        self.config = config
 
         # Input placeholders
         self.R = tf.placeholder("float", [None, config.NUM_USERS])
@@ -133,6 +134,8 @@ class KernelNet(BaseModel):
 
                 self.log_info(
                     f'epoch: {i}, validation rmse: {np.round(np.sqrt(error_val), 4)}, train rmse: {np.round(np.sqrt(error_train), 4)}')
+                if i % self.config.TEST_EVERY == 0:
+                    self.validation_rmse.append(np.round(np.sqrt(error_val), 4).item())
 
                 self.reconstructed_matrix = pre
 
