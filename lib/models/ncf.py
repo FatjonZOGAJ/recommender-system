@@ -8,12 +8,18 @@ from easydict import EasyDict as edict
 from lib.utils.utils import get_score
 
 params = edict()
-params.embedding_size = 16
+params.EMBEDDING_SIZE = 16
+params.LEARNING_RATE = 0.001
+params.BATCH_SIZE = 64
+params.NUM_EPOCHS = 1
 
 
 class NCF(BaseModel):
-    def __init__(self, config, logger, ncf_network, device):
+    def __init__(self, config, logger):
         super().__init__(logger)
+        device = 'cpu'
+        ncf_network = NCFNetwork(config.NUM_USERS, config.NUM_MOVIES, params.EMBEDDING_SIZE).to(device)
+
         self.config = config
         self.ncf_network = ncf_network
         self.device = device
@@ -25,21 +31,21 @@ class NCF(BaseModel):
 
         train_dataloader = DataLoader(
             TensorDataset(train_users_torch, train_movies_torch, train_predictions_torch),
-            batch_size=self.config.BATCH_SIZE)
+            batch_size=params.BATCH_SIZE)
 
-        if self.config.VALIDATE:
+        if self.config.TYPE == 'VAL':
             test_users_torch = torch.tensor(kwargs['val_users'], device=self.device)
             test_movies_torch = torch.tensor(kwargs['val_movies'], device=self.device)
 
             test_dataloader = DataLoader(
                 TensorDataset(test_users_torch, test_movies_torch),
-                batch_size=self.config.BATCH_SIZE)
+                batch_size=params.BATCH_SIZE)
 
         optimizer = optim.Adam(self.ncf_network.parameters(),
-                               lr=self.config.LEARNING_RATE)
+                               lr=params.LEARNING_RATE)
 
         step = 0
-        for epoch in range(self.config.NUM_EPOCHS):
+        for epoch in range(params.NUM_EPOCHS):
             for users_batch, movies_batch, target_predictions_batch in train_dataloader:
                 optimizer.zero_grad()
                 predictions_batch = self.ncf_network(users_batch, movies_batch)
@@ -48,7 +54,7 @@ class NCF(BaseModel):
                 optimizer.step()
                 step += 1
 
-            if epoch % 5 == 0 and self.config.VALIDATE:
+            if epoch % 5 == 0 and self.config.TYPE == 'VAL':
                 with torch.no_grad():
                     all_predictions = []
                     for users_batch, movies_batch in test_dataloader:
@@ -65,7 +71,8 @@ class NCF(BaseModel):
         test_movies_torch = torch.tensor(test_movies, device=self.device)
 
         test_predictions = self.ncf_network(test_users_torch, test_movies_torch)
-        reconstructed_matrix, _ = self.create_matrices(test_movies, test_users, test_predictions, default_replace='zero')
+        reconstructed_matrix, _ = self.create_matrices(test_movies, test_users, test_predictions,
+                                                       default_replace='zero')
 
         predictions, index = self._extract_prediction_from_full_matrix(reconstructed_matrix, test_users,
                                                                        test_movies)
@@ -86,7 +93,7 @@ class NCFNetwork(nn.Module):
             nn.ReLU(),
             nn.Linear(in_features=64, out_features=16),
             nn.ReLU(),
-            nn.Linear(in_features=16, out_features=1), # maybe predict per category?
+            nn.Linear(in_features=16, out_features=1),  # maybe predict per category?
             nn.ReLU()
         )
 
@@ -102,7 +109,4 @@ def mse_loss(predictions, target):
 
 
 def get_model(config, logger):
-    #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    device = 'cpu'
-    ncf_network = NCFNetwork(config.NUM_USERS, config.NUM_MOVIES, params.embedding_size).to(device)
-    return NCF(config, logger, ncf_network, device)
+    return NCF(config, logger)

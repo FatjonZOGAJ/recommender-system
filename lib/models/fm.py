@@ -14,7 +14,6 @@ from scipy import sparse
 from collections import defaultdict
 
 from lib.models.base_model import BaseModel
-from lib.utils.config import config
 
 params = edict()
 params.FEATURES_PATH = 'data/features/'
@@ -32,11 +31,16 @@ params.USE_GENRES = not params.USE_DISTANCES
 params.ORDERED_PROBIT = False
 
 
-class FMRelational(BaseModel):
-    def __init__(self, number_of_users, number_of_movies, logger, model_nr):
+class BFM(BaseModel):
+    def __init__(self, config, logger, model_nr):
         super().__init__(logger, model_nr)
-        self.num_users = number_of_users
-        self.num_movies = number_of_movies
+        self.config = config
+
+        self.num_users = self.config.NUM_USERS
+        self.num_movies = self.config.NUM_MOVIES
+        self._load_feature_data(logger)
+
+    def _load_feature_data(self, logger):
         if params.USE_JACCARD:
             if params.USE_JACCARDPP \
                     and os.path.isfile(params.FEATURES_PATH + 'jaccard_L_gzip.hkl') \
@@ -91,19 +95,7 @@ class FMRelational(BaseModel):
 
         # setup grouping, which specifies each variable group’s size.
         group_shapes = []
-        group_shapes.append(len(self.user_id_to_index))  # user ids
-        if params.USE_IU:
-            group_shapes.append(len(self.movie_id_to_index))
-        if params.USE_JACCARD:
-            group_shapes.append(len(self.user_id_to_index))
-        group_shapes.append(len(self.movie_id_to_index))  # movie ids
-        if params.USE_II:
-            group_shapes.append(len(self.user_id_to_index))  # all users who watched the movies
-        if params.USE_MOVIE:
-            if params.USE_GENRES:
-                group_shapes.append(18)  # rank/number of movie genres
-            elif params.USE_DISTANCES:
-                group_shapes.append(len(self.movie_id_to_index))
+        self._set_group_shapes(group_shapes)
 
         if not params.ORDERED_PROBIT:
             self.fm = myfm.MyFMRegressor(rank=params.RANK)
@@ -122,6 +114,21 @@ class FMRelational(BaseModel):
                 n_iter=params.N_ITER,
                 n_kept_samples=None
             )
+
+    def _set_group_shapes(self, group_shapes):
+        group_shapes.append(len(self.user_id_to_index))  # user ids
+        if params.USE_IU:
+            group_shapes.append(len(self.movie_id_to_index))
+        if params.USE_JACCARD:
+            group_shapes.append(len(self.user_id_to_index))
+        group_shapes.append(len(self.movie_id_to_index))  # movie ids
+        if params.USE_II:
+            group_shapes.append(len(self.user_id_to_index))  # all users who watched the movies
+        if params.USE_MOVIE:
+            if params.USE_GENRES:
+                group_shapes.append(18)  # rank/number of movie genres
+            elif params.USE_DISTANCES:
+                group_shapes.append(len(self.movie_id_to_index))
 
     def predict(self, test_movies, test_users, save_submission, suffix='', postprocessing='default'):
         self.df_test = pd.DataFrame(
@@ -161,7 +168,7 @@ class FMRelational(BaseModel):
             for i, (user, movie) in enumerate(zip(test_users, test_movies)):
                 index[i] = f"r{user + 1}_c{movie + 1}"
             submission = pd.DataFrame({'Id': index, 'Prediction': predictions})
-            submission.to_csv(config.SUBMISSION_NAME, index=False)
+            submission.to_csv(self.config.SUBMISSION_NAME, index=False)
         print('Finishing prediction')
         return predictions
 
@@ -243,4 +250,4 @@ def jaccard(u, v, user_vs_watched):
 
 
 def get_model(config, logger, model_nr=0):
-    return FMRelational(config.NUM_USERS, config.NUM_MOVIES, logger, model_nr)
+    return BFM(config, logger, model_nr)

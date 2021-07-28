@@ -16,7 +16,7 @@ def read_data():
 
     test_pd = pd.read_csv(f'{data_directory}/sampleSubmission.csv')
 
-    if config.VALIDATE:
+    if config.TYPE == 'VAL':
         train_pd, val_pd = train_test_split(data_pd, train_size=config.TRAIN_SIZE, random_state=config.RANDOM_STATE,
                                             stratify=data_pd[config.STRATIFY])
         return train_pd, val_pd, test_pd

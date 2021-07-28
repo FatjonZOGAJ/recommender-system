@@ -6,38 +6,35 @@ import tensorflow as tf
 from easydict import EasyDict as edict
 
 from lib.models.base_model import BaseModel
-from lib.utils.config import config
-
-# TODO: add to params
-
-TESTING = False
 
 params = edict()
 params.HIDDEN_UNITS = 500
-LAMBDA_2 = 90.
-LAMBDA_SPARSITY = 0.023
-N_LAYERS = 2
-OUTPUT_EVERY = 50 if not TESTING else 5  # evaluate performance on test set; breaks l-bfgs loop
-N_EPOCHS = 3  # N_LAYERS * 10
-VERBOSE_BFGS = False
+params.TESTING = False
+params.LAMBDA_2 = 90.
+params.LAMBDA_SPARSITY = 0.023
+params.N_LAYERS = 2
+params.OUTPUT_EVERY = 50 if not params.TESTING else 5  # evaluate performance on test set; breaks l-bfgs loop
+params.N_EPOCHS = 3  # N_LAYERS * 10
+params.VERBOSE_BFGS = False
 
 
 class KernelNet(BaseModel):
-    def __init__(self, logger, model_nr):
+    def __init__(self, config, logger, model_nr):
         super().__init__(logger, model_nr)
+        self.config = config
 
         # Input placeholders
-        self.R = tf.placeholder("float", [None, config.NUM_USERS])
+        self.R = tf.placeholder("float", [None, self.config.NUM_USERS])
 
         # Instantiate network
         y = self.R
         reg_losses = None
-        for i in range(N_LAYERS):
-            y, reg_loss = self.kernel_layer(y, params.HIDDEN_UNITS, name=str(i), lambda_2=LAMBDA_2,
-                                            lambda_s=LAMBDA_SPARSITY)
+        for i in range(params.N_LAYERS):
+            y, reg_loss = self.kernel_layer(y, params.HIDDEN_UNITS, name=str(i), lambda_2=params.LAMBDA_2,
+                                            lambda_s=params.LAMBDA_SPARSITY)
             reg_losses = reg_loss if reg_losses is None else reg_losses + reg_loss
-        self.prediction, reg_loss = self.kernel_layer(y, config.NUM_USERS, activation=tf.identity, name='out',
-                                                      lambda_2=LAMBDA_2, lambda_s=LAMBDA_SPARSITY)
+        self.prediction, reg_loss = self.kernel_layer(y, self.config.NUM_USERS, activation=tf.identity, name='out',
+                                                      lambda_2=params.LAMBDA_2, lambda_s=params.LAMBDA_SPARSITY)
         self.reg_losses = reg_losses + reg_loss
 
     def fit_init(self, train_mask):
@@ -47,10 +44,11 @@ class KernelNet(BaseModel):
         loss = sqE + self.reg_losses
 
         # Instantiate L-BFGS Optimizer
-        self.optimizer = tf.contrib.opt.ScipyOptimizerInterface(loss, options={'maxiter': OUTPUT_EVERY,
-                                                                               'disp': VERBOSE_BFGS,
-                                                                               'maxcor': 10},
-                                                                method='L-BFGS-B')
+        self.optimizer = tf.contrib.opt.ScipyOptimizerInterface(loss, method='L-BFGS-B',
+                                                                options={'maxiter': params.OUTPUT_EVERY,
+                                                                         'disp': params.VERBOSE_BFGS,
+                                                                         'maxcor': 10},
+                                                                )
 
     # define network functions
     def kernel(self, u, v):
@@ -108,13 +106,13 @@ class KernelNet(BaseModel):
         val_movies, val_users, val_predictions = self.get_kwargs_data(kwargs, 'val_movies', 'val_users',
                                                                       'val_predictions')
         test_movies, test_users, test_every = self.get_kwargs_data(kwargs, 'test_movies', 'test_users', 'test_every')
-        # TODO: zero better?
+
         data, mask = self.create_matrices(train_movies, train_users, train_predictions,
-                                          default_replace=config.DEFAULT_VALUES[self.model_nr])
+                                          default_replace=self.config.DEFAULT_VALUES[self.model_nr])
         data, mask = data.T, mask.T  # NOTE transpose
         if not val_movies is None:
             data_val, mask_val = self.create_matrices(val_movies, val_users, val_predictions,
-                                                      default_replace=config.DEFAULT_VALUES[self.model_nr])
+                                                      default_replace=self.config.DEFAULT_VALUES[self.model_nr])
             data_val, mask_val = data_val.T, mask_val.T  # NOTE transpose
 
         self.fit_init(mask)
@@ -123,7 +121,7 @@ class KernelNet(BaseModel):
         init = tf.global_variables_initializer()
         with tf.Session() as sess:
             sess.run(init)
-            for i in range(N_EPOCHS):
+            for i in range(params.N_EPOCHS):
                 self.optimizer.minimize(sess, feed_dict={self.R: data})  # do maxiter optimization steps
                 pre = sess.run(self.prediction, feed_dict={self.R: data})  # predict ratings
 
@@ -136,7 +134,7 @@ class KernelNet(BaseModel):
 
                 self.reconstructed_matrix = pre
 
-                if i == 0 and TESTING:
+                if i == 0 and params.TESTING:
                     break
 
                 if not test_movies is None and i + 1 % test_every == 0:
@@ -145,8 +143,9 @@ class KernelNet(BaseModel):
 
     def predict(self, test_movies, test_users, save_submission, suffix='', postprocessing='default'):
         assert (len(test_users) == len(test_movies)), "users-movies combinations specified should have equal length"
-        predictions, index = self._extract_prediction_from_full_matrix(self.reconstructed_matrix.transpose(), users=test_users,
-                                                         movies=test_movies)
+        predictions, index = self._extract_prediction_from_full_matrix(self.reconstructed_matrix.transpose(),
+                                                                       users=test_users,
+                                                                       movies=test_movies)
         predictions = self.postprocessing(predictions, postprocessing)
         if save_submission:
             self.save_submission(index, predictions, suffix=suffix)
@@ -154,4 +153,4 @@ class KernelNet(BaseModel):
 
 
 def get_model(config, logger, model_nr=0):
-    return KernelNet(logger, model_nr)
+    return KernelNet(config, logger, model_nr)

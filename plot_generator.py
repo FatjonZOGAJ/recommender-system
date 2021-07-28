@@ -5,6 +5,8 @@ from lib.utils import utils
 from lib.utils.config import config
 from lib.utils.loader import extract_users_items_predictions, read_data
 from lib.utils.utils import get_score
+from lib.models.svd import SVD
+from lib.models.autoencoder import AutoEncoder
 
 
 def plot_heatmap(matrix, x_values, y_values, show_values=False):
@@ -46,8 +48,7 @@ def call_autoencoder_rmse_single_layer(train_users, train_movies, train_predicti
     final_rmse = []
 
     for encoded_dimension in encoded_dimensions:
-        config.ENCODED_DIMENSION = encoded_dimension
-        model = models[config.MODEL].get_model(config, logger)
+        model = AutoEncoder(config, logger, encoded_dimension)
         model.fit(train_movies, train_users, train_predictions,
                   val_movies=val_movies, val_users=val_users, val_predictions=val_predictions)  # iterative val score
         predictions = model.predict(val_movies, val_users, save_submission=False, postprocessing='default')
@@ -72,21 +73,17 @@ def call_deep_autoencoder(train_users, train_movies, train_predictions, val_user
     one_layer_rmse = []
     two_layer_rmse = []
 
-    config.SINGLE_LAYER = True
     for encoded_dimension in encoded_dimensions:
-        config.ENCODED_DIMENSION = encoded_dimension
-        model = models[config.MODEL].get_model(config, logger)
+        model = AutoEncoder(config, logger, encoded_dimension=encoded_dimension, single_layer=True)
         model.fit(train_movies, train_users, train_predictions,
                   val_movies=val_movies, val_users=val_users, val_predictions=val_predictions)  # iterative val score
         predictions = model.predict(val_movies, val_users, save_submission=False, postprocessing='default')
         rmse = get_score(predictions, target_values=val_predictions)
         one_layer_rmse.append(rmse)
 
-    config.SINGLE_LAYER = False
-    config.HIDDEN_DIMENSION = [500]
     for encoded_dimension in encoded_dimensions:
-        config.ENCODED_DIMENSION = encoded_dimension
-        model = models[config.MODEL].get_model(config, logger)
+        model = AutoEncoder(config, logger, encoded_dimension=encoded_dimension, single_layer=False,
+                            hidden_dimension=[500])
         model.fit(train_movies, train_users, train_predictions,
                   val_movies=val_movies, val_users=val_users, val_predictions=val_predictions)  # iterative val score
         predictions = model.predict(val_movies, val_users, save_submission=False, postprocessing='default')
@@ -112,14 +109,11 @@ def call_rmse_embedding(train_users, train_movies, train_predictions, val_users,
     colors = []
     labels = []
 
-    config.MODEL = 'svd'
-
     svd_rmse = []
     for embedding_dimension in embedding_dimensions:
-        config.K_SINGULAR_VALUES = embedding_dimension
-        model = models[config.MODEL].get_model(config, logger)
+        model = SVD(config, logger, 0, embedding_dimension)
         model.fit(train_movies, train_users, train_predictions,
-              val_movies=val_movies, val_users=val_users, val_predictions=val_predictions)  # iterative val score
+                  val_movies=val_movies, val_users=val_users, val_predictions=val_predictions)  # iterative val score
         predictions = model.predict(val_movies, val_users, save_submission=False, postprocessing='default')
         rmse = get_score(predictions, target_values=val_predictions)
         svd_rmse.append(rmse)
@@ -145,4 +139,4 @@ if __name__ == '__main__':
     # call_rmse_embedding(train_users, train_movies, train_predictions, val_users, val_movies, val_predictions)
     # call_autoencoder_rmse_single_layer(train_users, train_movies, train_predictions, val_users, val_movies, val_predictions)
 
-    plot_heatmap(np.random.rand(3,2), [1, 2], [4, 5, 6])
+    plot_heatmap(np.random.rand(3, 2), [1, 2], [4, 5, 6])

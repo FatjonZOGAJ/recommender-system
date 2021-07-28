@@ -43,7 +43,7 @@ if __name__ == '__main__':
         logger = utils.init(seed=config.RANDOM_STATE)
         logger.info(f'Using {config.MODEL} model for prediction')
         # Load data
-        config.VALIDATE = False
+        config.TYPE = 'ALL'
         data_pd, test_pd = read_data()
         users, movies, predictions = extract_users_items_predictions(data_pd)
         model = models.models[config.MODEL].get_model(config, logger)

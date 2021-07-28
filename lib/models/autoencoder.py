@@ -7,28 +7,38 @@ from torch.utils.data import DataLoader, TensorDataset
 from lib.models.base_model import BaseModel
 from lib.utils.utils import get_score
 
+from easydict import EasyDict as edict
+
+params = edict()
+params.ENCODED_DIMENSION = 250
+params.LEARNING_RATE = 0.001
+params.BATCH_SIZE = 64
+params.NUM_EPOCHS = 1
+params.HIDDEN_DIMENSION = [500]
+params.SINGLE_LAYER = False
+
 
 def loss_function_autoencoder(original, reconstructed, mask):
     return torch.mean(mask * (original - reconstructed) ** 2)
 
 
 class Encoder(nn.Module):
-    def __init__(self, input_dimension, config, encoded_dimension=250):
+    def __init__(self, input_dimension, encoded_dimension=250):
         super().__init__()
 
-        if config.SINGLE_LAYER:
+        if params.SINGLE_LAYER:
             self.model = nn.Sequential(
                 nn.Linear(in_features=input_dimension, out_features=encoded_dimension),
                 nn.ReLU(),
             )
         else:
-            input_layer = nn.Sequential(nn.Linear(in_features=input_dimension, out_features=config.HIDDEN_DIMENSION[0]),
+            input_layer = nn.Sequential(nn.Linear(in_features=input_dimension, out_features=params.HIDDEN_DIMENSION[0]),
                                         nn.ReLU())
-            len_hidden_dimensions = len(config.HIDDEN_DIMENSION)
+            len_hidden_dimensions = len(params.HIDDEN_DIMENSION)
             if len_hidden_dimensions != 0:
-                hidden_layers = [nn.Sequential(nn.Linear(in_features=config.HIDDEN_DIMENSION[i],
-                                                         out_features=config.HIDDEN_DIMENSION[(
-                                                                     i + 1)] if i == len_hidden_dimensions else encoded_dimension),
+                hidden_layers = [nn.Sequential(nn.Linear(in_features=params.HIDDEN_DIMENSION[i],
+                                                         out_features=params.HIDDEN_DIMENSION[(
+                                                                 i + 1)] if i == len_hidden_dimensions else encoded_dimension),
                                                nn.ReLU()) for i in range(len_hidden_dimensions)]
                 layers = [input_layer, *hidden_layers]
             self.model = nn.Sequential(*layers)
@@ -38,21 +48,21 @@ class Encoder(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self, output_dimensions, config, encoded_dimension=250):
+    def __init__(self, output_dimensions, encoded_dimension=250):
         super().__init__()
-        if config.SINGLE_LAYER:
+        if params.SINGLE_LAYER:
             self.model = nn.Sequential(
                 nn.Linear(in_features=encoded_dimension, out_features=output_dimensions),
                 nn.ReLU(),
             )
         else:
             input_layer = nn.Sequential(
-                nn.Linear(in_features=encoded_dimension, out_features=config.HIDDEN_DIMENSION[-1]),
+                nn.Linear(in_features=encoded_dimension, out_features=params.HIDDEN_DIMENSION[-1]),
                 nn.ReLU())
-            len_hidden_dimensions = len(config.HIDDEN_DIMENSION)
+            len_hidden_dimensions = len(params.HIDDEN_DIMENSION)
             if len_hidden_dimensions != 0:
-                hidden_layers = [nn.Sequential(nn.Linear(in_features=config.HIDDEN_DIMENSION[i],
-                                                         out_features=config.HIDDEN_DIMENSION[(
+                hidden_layers = [nn.Sequential(nn.Linear(in_features=params.HIDDEN_DIMENSION[i],
+                                                         out_features=params.HIDDEN_DIMENSION[(
                                                                  i - 1)] if i != 0 else output_dimensions),
                                                nn.ReLU()) for i in range(len_hidden_dimensions - 1, -1, -1)]
                 layers = [input_layer, *hidden_layers]
@@ -73,18 +83,35 @@ class AutoEncoderNetwork(nn.Module):
 
 
 class AutoEncoder(BaseModel):
-    def __init__(self, autoencoder_network, num_users, num_movies, logger, device, config):
+    def __init__(self, config, logger, encoded_dimension=params.ENCODED_DIMENSION, single_layer=params.SINGLE_LAYER,
+                 hidden_dimension=params.HIDDEN_DIMENSION):
 
         super().__init__(logger)
+        self.config = config
+        params.ENCODED_DIMENSION = encoded_dimension
+        params.SINGLE_LAYER = single_layer
+        params.HIDDEN_DIMENSION = hidden_dimension
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        autoencoder_network = AutoEncoderNetwork(
+            encoder=Encoder(
+                input_dimension=self.config.NUM_MOVIES,
+                encoded_dimension=params.ENCODED_DIMENSION,
+            ),
+            decoder=Decoder(
+                output_dimensions=config.NUM_MOVIES,
+                encoded_dimension=params.ENCODED_DIMENSION,
+            )
+        ).to(device)
+
         self.autoencoder_network = autoencoder_network
         self.logger = logger
-        self.num_users = num_users
-        self.num_movies = num_movies
-        self.num_epochs = config.NUM_EPOCHS
-        self.batch_size = config.BATCH_SIZE
+        self.num_users = config.NUM_USERS
+        self.num_movies = config.NUM_MOVIES
+        self.num_epochs = params.NUM_EPOCHS
+        self.batch_size = params.BATCH_SIZE
         self.device = device
         self.loss_function = loss_function_autoencoder
-        self.optimizer = optim.Adam(self.autoencoder_network.parameters(), lr=config.LEARNING_RATE)
+        self.optimizer = optim.Adam(self.autoencoder_network.parameters(), lr=params.LEARNING_RATE)
 
     def fit(self, train_movies, train_users, train_predictions, **kwargs):
         # Build Dataloaders
@@ -109,8 +136,8 @@ class AutoEncoder(BaseModel):
                 self.optimizer.step()
                 step += 1
 
-            if epoch % 5 == 0:
-                predictions = self.predict(kwargs['val_movies'], kwargs['val_users'], save_submission=False, )
+            if epoch % 5 == 0 and self.config.TYPE == 'VAL':
+                predictions = self.predict(kwargs['val_movies'], kwargs['val_users'], save_submission=False)
                 reconstruction_rmse = get_score(predictions, kwargs['val_predictions'])
                 self.logger.info('At epoch {:3d} loss is {:.4f}'.format(epoch, reconstruction_rmse))
 
@@ -136,17 +163,4 @@ class AutoEncoder(BaseModel):
 
 
 def get_model(config, logger):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    autoencoder_network = AutoEncoderNetwork(
-        encoder=Encoder(
-            input_dimension=config.NUM_MOVIES,
-            encoded_dimension=config.ENCODED_DIMENSION,
-            config=config
-        ),
-        decoder=Decoder(
-            output_dimensions=config.NUM_MOVIES,
-            encoded_dimension=config.ENCODED_DIMENSION,
-            config=config
-        )
-    ).to(device)
-    return AutoEncoder(autoencoder_network, config.NUM_USERS, config.NUM_MOVIES, logger, device, config)
+    return AutoEncoder(config, logger)
