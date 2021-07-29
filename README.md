@@ -29,3 +29,5 @@ To build the report, simply call:
     cd report
 
     bash build-paper.sh 
+
+#TODO write on how to reproduce best score
