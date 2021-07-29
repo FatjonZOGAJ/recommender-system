@@ -13,8 +13,9 @@
     \title{Collaborative Filtering}
 
     \author{
-     Rafael Sterzinger\spacing Fatjon Zogaj \spacing Patrik Okanovic \spacing Filip Batur Stipic\\
-    ETH Zurich, Switzerland
+        Rafael Sterzinger \and Patrik Okanovic \and Fatjon Zogaj \and Filip Batur Stipic\\
+        Group: Terminators\\
+        Department of Computer Science, ETH Zurich, Switzerland
     }
 
     \maketitle
@@ -23,18 +24,19 @@
 
     \end{abstract}
 
+
     \section{Introduction}
-    
+
     The goal of designing Recommender Systems is to recommend the item most likely to be of interest to a target user based on past data. Collaborative Filtering is one of the standard computational methods that attempts to solve this problem by leveraging the similarities between users and items in some vector space \cite{CF_survey}. Usually, the preference data of users to items is represented by a real-valued sparse matrix, given that often users do not rate most movies. In this project we are concerned with completing such sparse matrix, in which each observed entry represents the rating of a user for some movie.
-    
+
     In the past two decades, the community had been concerned with constructing benchmarks for different recommendation tasks as well as using novel machine learning techniques in order to tackle the problem in a controlled fashion and in ever more elaborate ways. Some of the most famous benchmarks whose data also represents movie ratings are the Netflix Prize \cite{Netflix} and MovieLens \cite{Movielens}. The most well-established baselines for these benchmarks include Matrix Factorization models, such as Singular Value Decomposition \cite{svd}, Alternating Least-Squares \cite{als} and Bayesian Factorization Machines and its variants \cite{freudenthaler_bayesian_2011, salakhutdinov_bayesian_2008}. The core idea behind such models is that preferences of users over movies are only determined by a small number of unobserved factors. These latent factors are assumed to be feature vectors for each user and movie separately, so that the corresponding rating of a user for a movie is represented by a dot product between the latent feature vector for that particular user and movie (...)
-    
+
     Some of the more recent, neural-based successful approaches include: Neural Collaborative Filtering \cite{DBLP:journals/corr/abs-1708-05031}, Autoencoders for Collaborative Filtering \cite{inproceedings} and Neural Graph Collaborative Filtering \cite{ngcf}.
-    
-    Surprisingly enough, the now seminal paper: "On the Difficulty of Evaluating Baselines" by Rendle et al. \cite{rendle_difficulty_2019} showed that by carefully tuning the existing simple baselines by doing more extensive hyperparameter searches, the performance of the baselines can be drastically improved. Most notably, the authors demonstrate that Bayesian Factorization Machines \cite{freudenthaler_bayesian_2011, salakhutdinov_bayesian_2008} when used in conjunction with the common initialization technique SVD++ \cite{koren_factorization_2008} can outperform any result on the MovieLens benchmark up to date. 
-    
-    Since, Graph Neural Networks had especially surged in popularity, and most very recent papers in Collaborative Filtering for Recommendation Systems attempt to exploit their alleged ability to model topologically richer dependencies between users and items, one way or another. However, since GNN based approaches for Collaborative filtering had still not been shown to systematically beat the afore mentioned Bayesian FM for movie recommendation benchmarks \cite{gnn_survey}, we choose rather to focus on improving the current state-of-the-art Bayesian Factorization Machine by ... 
-    
+
+    Surprisingly enough, the now seminal paper: "On the Difficulty of Evaluating Baselines" by Rendle et al. \cite{rendle_difficulty_2019} showed that by carefully tuning the existing simple baselines by doing more extensive hyperparameter searches, the performance of the baselines can be drastically improved. Most notably, the authors demonstrate that Bayesian Factorization Machines \cite{freudenthaler_bayesian_2011, salakhutdinov_bayesian_2008} when used in conjunction with the common initialization technique SVD++ \cite{koren_factorization_2008} can outperform any result on the MovieLens benchmark up to date.
+
+    Since, Graph Neural Networks had especially surged in popularity, and most very recent papers in Collaborative Filtering for Recommendation Systems attempt to exploit their alleged ability to model topologically richer dependencies between users and items, one way or another. However, since GNN based approaches for Collaborative filtering had still not been shown to systematically beat the afore mentioned Bayesian FM for movie recommendation benchmarks \cite{gnn_survey}, we choose rather to focus on improving the current state-of-the-art Bayesian Factorization Machine by ...
+
 
     \section{Related Work}
     %TODO might not be necessary only for text filler if needed
@@ -73,6 +75,9 @@
     implementing the network as a classification task between the movie rating rather then regressing the predicted rating.
 
     \subsection{Kernel Net}
+    We add the MovieLens-1M state of the art model (on papers with code) as another baseline as the given problem description fares very similarly to ours.
+    For this, we adapt the code from \cite{pmlr-v80-muller18a, kernelNetGithub} into our experiment framework.
+    %\citeauthor{pmlr-v80-muller18a}
 
     \subsection{Bayesian Factorization Machines}
     For our final baseline, we explored Bayesian Factorization Machines \textbf{(BFM)} which are Bayesian variants of the former known Factorization Machines \textbf{(FM)} \cite{rendle_factorization_2010}.
@@ -113,9 +118,9 @@
     Here, the set of items $\mathbf{I}_u$ a user $u$ has consumed is subdivided into three parts $L,M,$ and $H$ with two boundaries $L_{bd}$ and $H_{bd}$.
     Given these boundaries the sets are formulated as follows:
     \begin{align*}
-          &\mathbf{I}_{L,u}=\{i \in \mathbf{I}_u : r_{u,i} \leq L_{bd}\}\\
-          &\mathbf{I}_{M,u}=\{i \in \mathbf{I}_u : L_{bd} < r_{u,i} < H_{bd}\}\\
-          &\mathbf{I}_{H,u}=\{i \in \mathbf{I}_u : H_{bd} \leq r_{u,i}\}\\
+        &\mathbf{I}_{L,u}=\{i \in \mathbf{I}_u : r_{u,i} \leq L_{bd}\}\\
+        &\mathbf{I}_{M,u}=\{i \in \mathbf{I}_u : L_{bd} < r_{u,i} < H_{bd}\}\\
+        &\mathbf{I}_{H,u}=\{i \in \mathbf{I}_u : H_{bd} \leq r_{u,i}\}\\
     \end{align*}
     The improved Jaccard index with these definied subsets is denoted as follows:
     $$\text{Jac}_{LMH}=\frac{1}{3}(\text{Jac}_L(u,v) + \text{Jac}_M(u,v) + \text{Jac}_H(u,v))$$
@@ -139,10 +144,11 @@
     \end{figure}
 
     With these additional user/item features, we append to our feature vector $\mathbf{x}_{ui}$ a dense vector of user similarities from user $u$ to every other user, or the item feature which is either the one-hot-encoded cluster of item $i$ or a dense vector of Euclidean/Mahalanobis distances from item $i$ to every other item.
-    
+
     Finally, the following algorithm \ref{algo} shows our proposed procedure for creating additional features to run \textbf{BFM}
-    
-    \begin{algorithm}\label{algo}
+
+    \begin{algorithm}
+        \label{algo}
         \SetKwInOut{Input}{input}
         Initialize missing matrix value with FM\\
         \For{$k = 0...K$} {
@@ -163,7 +169,7 @@
         }
 
         \caption{Proposed solution for collaborative filtering}
-    \end{algorithm} 
+    \end{algorithm}
 
     \subsubsection{Iterative SVD}
 
