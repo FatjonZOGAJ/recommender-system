@@ -1,3 +1,5 @@
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 from lib.models import models
@@ -148,15 +150,19 @@ def call_rmse_validation(train_users, train_movies, train_predictions, val_users
     rmse_values = []
     times = []
     for model_name in model_names:
-        config.MODEL = model_name
-        model = models[config.MODEL].get_model(config, logger)
-        start = time.time()
-        model.fit(train_movies, train_users, train_predictions,
-                  val_movies=val_movies, val_users=val_users, val_predictions=val_predictions)
-        end = time.time()
-        times.append(end-start)
-        np.save(model_name + '.npy', np.array(model.validation_rmse))
-        rmse_values.append(model.validation_rmse)
+        if os.path.exists(model_name + '.npy'):
+            data = np.load(model_name + '.npy')
+            rmse_values.append(data.tolist())
+        else:
+            config.MODEL = model_name
+            model = models[config.MODEL].get_model(config, logger)
+            start = time.time()
+            model.fit(train_movies, train_users, train_predictions,
+                      val_movies=val_movies, val_users=val_users, val_predictions=val_predictions)
+            end = time.time()
+            times.append(end-start)
+            np.save(model_name + '.npy', np.array(model.validation_rmse))
+            rmse_values.append(model.validation_rmse)
     np.save('validation_rmse.npy', np.array(rmse_values))
     np.save('times.npy', times)
     colors = ['red', 'blue', 'green', 'orange']
