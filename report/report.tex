@@ -8,6 +8,13 @@
 \usepackage{amsfonts}
 \usepackage[ruled,vlined]{algorithm2e}
 
+\usepackage[hidelinks,bookmarksnumbered,unicode]{hyperref} % Enables cross linking in the electronic document version. This package has to be included second to last.
+\usepackage[noabbrev,nameinlink]{cleveref}
+\usepackage{balance}
+\usepackage{nag}       % Issues warnings when best practices in writing LaTeX documents are violated.
+\usepackage{booktabs}   % Improves the typesettings of tables.
+
+
 \newcommand{\spacing}{\hspace{1cm}}
 \begin{document}
     \title{Collaborative Filtering}
@@ -155,21 +162,20 @@
     We get the embeddings using the following expression: assuming $A=U\Sigma V^T$ then the matrix corresponding to the movie embeddings is equal to $\Sigma _k ^{\frac{1}{2}} V_k ^T$.
     Finally, after obtaining the k-rank movie embeddings we search for the optimal number of clusters in K-Means clustering.
     We visualize the clusters in 2 dimensions. Since, visualizing in two dimensions does not easily distinct the optimal
-    number of clusters we choose 18 as in the MovieLens dataset as the number of clusters. Figure \ref{movie_category_distribution}
+    number of clusters we choose 18 as in the MovieLens dataset as the number of clusters. \Cref{fig:movie_category_distribution}
     shows two peaks in movie categories while other categories look uniformly distributed.
 
     \begin{figure}
-        \label{movie_category_distribution}
         \includegraphics[width=\columnwidth]{figures/movie_category_distribution.png}
         \caption{Distribution of movie categories between 18 categories as in MovieLens dataset.}
+        \label{fig:movie_category_distribution}
     \end{figure}
 
     With these additional user/item features, we append to our feature vector $\mathbf{x}_{ui}$ a dense vector of user similarities from user $u$ to every other user, or the item feature which is either the one-hot-encoded cluster of item $i$ or a dense vector of Euclidean/Mahalanobis distances from item $i$ to every other item.
 
-    Finally, the following algorithm \ref{algo} shows our proposed procedure for creating additional features to run \textbf{BFM}
+    Finally, the following \Cref{alg:algo1} shows our proposed procedure for creating additional features to run \textbf{BFM}
 
     \begin{algorithm}
-        \label{algo}
         \SetKwInOut{Input}{input}
         Initialize missing matrix value with FM\\
         \For{$k = 0...K$} {
@@ -188,8 +194,8 @@
                 $D_{i,j} ^{Mahal} = \sqrt{(emb_i-emb_j)^TCov^{-1}(emb_i-emb_j)}$
             }
         }
-
         \caption{Proposed solution for collaborative filtering}
+        \label{alg:algo1}
     \end{algorithm}
 
     \subsubsection{Iterative SVD}
@@ -198,6 +204,26 @@
 
 
     \section{Results and Discussion}
+    We present our results in \Cref{tab:ablation}, noting the Root Mean Squared Error (RMSE) of our baselines and final model.
+    Test scores refer to the public leaderboard ranking while validation scores refer to a 10\% holdout of our training data.
+    Models without test scores did not perform well enough and were thus only evaluated on the validation dataset.
+    Some other models may only show test scores, e.g. if they were directly evaluated on the test data to eliminate
+    fitting the model twice (once on 90\% of training data and then on all the training data).
+
+    \begin{table}
+        \centering
+        \resizebox{\columnwidth}{!}{
+            \begin{tabular}{|| c | c | c | c ||}
+                \hline
+                \textbf{Model} & \textbf{Params} & \textbf{RMSE}$_{test}$ & \textbf{RMSE}$_{valid}$\\
+                \hline
+                BFM           & Ordered Probits                   & 0.96572                 & \\
+                \hline
+            \end{tabular}
+        }
+        \caption{We note Root Mean Squared Error (RMSE) on test and validation datasets to compare our baselines.}
+        \label{tab:ablation}
+    \end{table}
 
     \subsection{Comparison to Baselines}
 
@@ -220,6 +246,7 @@
 
 
 
+    \balance
     \bibliographystyle{IEEEtran}
     \bibliography{bibliography}
 \end{document}
