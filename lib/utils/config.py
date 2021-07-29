@@ -11,10 +11,10 @@ config.SUBMISSION_NAME = ''
 config.TIME_STR = ''
 config.DATA_DIR = 'data/'
 config.TRAIN_SIZE = 0.9
-config.TYPE = 'VAL'  # either 'ALL','VAL', or 'CV'
+config.TYPE = 'ALL'  # either 'ALL','VAL', or 'CV'
 config.STRATIFY = 'movies'  # stratify the train/test split either with  'movies' or 'users'
 config.TEST_EVERY = 3
-config.MODEL = 'svd'
+config.MODEL = 'fm'
 
 # allows iterative fitting of a model, initializing it with the results from a previous step or a default value
 # either one of the models, 'zero', 'mean','item_mean' or 'user_mean'

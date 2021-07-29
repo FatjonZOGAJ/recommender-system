@@ -11,9 +11,17 @@ params.MAX_ITER = 100
 
 
 class NMF(BaseModel):
-    def __init__(self, config, logger, model_nr):
+    def __init__(self, config, logger, model_nr=0, rank=params.RANK):
         super().__init__(logger, model_nr)
         self.config = config
+        params.RANK = rank
+
+    def set_params(self, rank):
+        params.RANK = rank
+        return self
+
+    def get_params(self, deep):
+        return {"rank": params.RANK}
 
     def fit(self, train_movies, train_users, train_predictions, **kwargs):
         # create full matrix of observed and unobserved values

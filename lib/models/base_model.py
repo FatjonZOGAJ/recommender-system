@@ -14,11 +14,11 @@ class BaseModel(ABC):
         self.model_nr = model_nr
 
     @abstractmethod
-    def fit(self, train_movies, train_users, train_predictions, **kwargs):
+    def fit(self, X, y, **kwargs):
         pass
 
     @abstractmethod
-    def predict(self, test_movies, test_users, save_submission, suffix='', postprocessing='default'):
+    def predict(self, X):
         pass
 
     def get_kwargs_data(self, kwargs, *keys):
@@ -105,7 +105,7 @@ class BaseModel(ABC):
 
         return data
 
-    def postprocessing(self, predictions, type):
+    def postprocessing(self, predictions, type=''):
         if type == 'round_quarters':
             predictions = roundPartial(predictions, 0.25)
         elif type == 'nothing':

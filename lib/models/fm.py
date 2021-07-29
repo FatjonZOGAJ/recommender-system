@@ -21,8 +21,8 @@ params.RANK = 32
 params.N_ITER = 512  # does not work if not enough iterations
 params.SAMPLES = None  # default is params.N_ITER - 5
 params.GROUPING = True
-params.USE_IU = True  # use implicit user feature
-params.USE_II = True  # use implicit item feature
+params.USE_IU = True  # use implicit user feature (SVD++)
+params.USE_II = True  # use implicit item feature (SVD++ flipped)
 params.USE_JACCARD = False  # taken from "Improving Jaccard Index for Measuring Similarity in Collaborative Filtering"
 params.USE_JACCARDPP = params.USE_JACCARD and False  # Taken from "Improving Jaccard Index for Measuring Similarity in Collaborative Filtering", using L=3 and H=4
 params.USE_MOVIE = False
@@ -32,13 +32,32 @@ params.ORDERED_PROBIT = False
 
 
 class BFM(BaseModel):
-    def __init__(self, config, logger, model_nr):
+    def __init__(self, config, logger, model_nr=0, rank=params.RANK, samples=params.SAMPLES,
+                 use_iu=params.USE_IU,
+                 use_ii=params.USE_II):
         super().__init__(logger, model_nr)
         self.config = config
+        params.RANK = rank
+        params.SAMPLES = samples
+        params.USE_IU = use_iu
+        params.USE_II = use_ii
 
         self.num_users = self.config.NUM_USERS
         self.num_movies = self.config.NUM_MOVIES
         self._load_feature_data(logger)
+
+    def set_params(self, logger, config, rank, samples, use_iu, use_ii):
+        self.logger = logger
+        self.config = config
+        params.SAMPLES = samples
+        params.RANK = rank
+        params.USE_IU = use_iu
+        params.USE_II = use_ii
+        return self
+
+    def get_params(self, deep):
+        return {"samples": params.SAMPLES, "rank": params.RANK, "use_iu": params.USE_IU, "use_ii": params.USE_II,
+                "logger": self.logger, "config": self.config}
 
     def _load_feature_data(self, logger):
         if params.USE_JACCARD:
@@ -67,8 +86,8 @@ class BFM(BaseModel):
                 logger.info('Shutting down...')
                 exit(0)
 
-    def fit(self, train_movies, train_users, train_predictions, **kwargs):
-        self.df_train = pd.DataFrame({'user_id': train_users, 'movie_id': train_movies, 'rating': train_predictions})
+    def fit(self, train_data, train_predictions, **kwargs):
+        self.df_train = pd.concat([train_data, train_predictions], axis=1)
 
         self.unique_user_ids = np.unique(self.df_train.user_id)
         self.unique_movie_ids = np.unique(self.df_train.movie_id)
@@ -130,9 +149,8 @@ class BFM(BaseModel):
             elif params.USE_DISTANCES:
                 group_shapes.append(len(self.movie_id_to_index))
 
-    def predict(self, test_movies, test_users, save_submission, suffix='', postprocessing='default'):
-        self.df_test = pd.DataFrame(
-            {'user_id': test_users, 'movie_id': test_movies, 'ratings': np.zeros([len(test_users)], dtype=int)})
+    def predict(self, test_data):
+        self.df_test = test_data
 
         print('Starting prediction')
         if not params.ORDERED_PROBIT:
@@ -161,14 +179,8 @@ class BFM(BaseModel):
                 predictions.append(prediction.dot(np.arange(1, 6)))
             predictions = np.hstack(predictions)
 
-        predictions = self.postprocessing(predictions, postprocessing)
+        predictions = self.postprocessing(predictions)
 
-        if save_submission:
-            index = [''] * len(test_users)
-            for i, (user, movie) in enumerate(zip(test_users, test_movies)):
-                index[i] = f"r{user + 1}_c{movie + 1}"
-            submission = pd.DataFrame({'Id': index, 'Prediction': predictions})
-            submission.to_csv(self.config.SUBMISSION_NAME, index=False)
         print('Finishing prediction')
         return predictions
 
@@ -251,3 +263,13 @@ def jaccard(u, v, user_vs_watched):
 
 def get_model(config, logger, model_nr=0):
     return BFM(config, logger, model_nr)
+
+
+def create_submission():
+    # if save_submission:
+    #     index = [''] * len(test_users)
+    #     for i, (user, movie) in enumerate(zip(test_users, test_movies)):
+    #         index[i] = f"r{user + 1}_c{movie + 1}"
+    #     submission = pd.DataFrame({'Id': index, 'Prediction': predictions})
+    #     submission.to_csv(self.config.SUBMISSION_NAME, index=False)
+    return

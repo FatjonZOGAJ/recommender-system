@@ -15,6 +15,13 @@ class SVD(BaseModel):
         self.num_movies = config.NUM_MOVIES
         params.RANK = rank
 
+    def set_params(self, rank):
+        params.RANK = rank
+        return self
+
+    def get_params(self, deep):
+        return {"rank": params.RANK}
+
     def fit(self, train_movies, train_users, train_predictions, **kwargs):
         # create full matrix of observed and unobserved values
         data, mask = self.create_matrices(train_movies, train_users, train_predictions,
