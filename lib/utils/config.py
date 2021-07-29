@@ -20,6 +20,7 @@ config.MODEL = 'svd'
 # either one of the models, 'zero', 'mean','item_mean' or 'user_mean'
 config.DEFAULT_VALUES = ['item_mean']
 
+# following adapted from https://gitlab.inf.ethz.ch/COURSE-MP2021/Terminators
 
 # saving config file
 def gen_config(config_file, config):

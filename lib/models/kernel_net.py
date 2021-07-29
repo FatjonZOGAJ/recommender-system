@@ -14,8 +14,8 @@ params.TESTING = False
 params.LAMBDA_2 = 90.
 params.LAMBDA_SPARSITY = 0.023
 params.N_LAYERS = 2
-params.MAX_ITER = 25 if not params.TESTING else 5  # evaluate performance on test set; breaks l-bfgs loop
-params.N_EPOCHS = 3  # N_LAYERS * 10
+params.MAX_ITER = 15 if not params.TESTING else 5  # evaluate performance on test set; breaks l-bfgs loop
+params.N_EPOCHS = 50 if not params.TESTING else 3
 params.VERBOSE_DISP = False
 
 
