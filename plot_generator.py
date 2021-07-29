@@ -8,19 +8,20 @@ from lib.utils.config import config
 from lib.utils.loader import extract_users_items_predictions, read_data
 from lib.utils.utils import get_score
 import time
+import hickle as hkl
 
 
 def plot_heatmap(matrix, x_values, y_values, show_values=False):
     fig, ax = plt.subplots()
-    im = ax.imshow(matrix, interpolation='nearest', cmap='winter')
+    im = ax.imshow(matrix, interpolation='nearest', cmap='RdBu')
     ax.figure.colorbar(im, ax=ax)
 
     ax.set(xticks=np.arange(len(x_values)),
            yticks=np.arange(len(y_values)),
            xticklabels=x_values, yticklabels=y_values,
            title="Heatmap",
-           ylabel='y_values',
-           xlabel='x_values')
+           ylabel='Sample size',
+           xlabel='Rank')
 
     if show_values:
         fmt = '.2f'
@@ -152,7 +153,7 @@ def call_rmse_validation(train_users, train_movies, train_predictions, val_users
     for model_name in model_names:
         if os.path.exists(model_name + '.npy'):
             data = np.load(model_name + '.npy')
-            rmse_values.append(data.tolist())
+            rmse_values.append(data.tolist()[0:25])
         else:
             config.MODEL = model_name
             model = models[config.MODEL].get_model(config, logger)
@@ -166,21 +167,74 @@ def call_rmse_validation(train_users, train_movies, train_predictions, val_users
     np.save('validation_rmse.npy', np.array(rmse_values))
     np.save('times.npy', times)
     colors = ['red', 'blue', 'green', 'orange']
-    plot_rmse_validation(range(0, config.NUM_EPOCHS, config.TEST_EVERY), rmse_values, colors, model_names, 'validation_plot.ong')
+    markers = ['-x', '-d', '-h', '-s']
+    plot_rmse(range(0, 125, config.TEST_EVERY), rmse_values, markers, colors, model_names, 'validation_plot.png', 'Epoch',
+              'Validation RMSE')
+
+
+def plot_rmse(rank, rmse_values, markers, colors, labels, path, x_title, y_title):
+    for i in range(len(rmse_values)):
+        plt.plot(rank, rmse_values[i], markers[i], c=colors[i], label=labels[i])
+    plt.legend()
+    plt.xlabel(x_title)
+    if x_title == 'Rank':
+        plt.xticks(rank)
+    plt.ylabel(y_title)
+    plt.savefig(path)
+
+
+def call_rmse_rank():
+    rmse_values = []
+    svd = hkl.load('svd.hkl')
+    rmse_values.append(svd['mean_test_score'].tolist())
+    nmf = hkl.load('nmf.hkl')
+    rmse_values.append(nmf['mean_test_score'].tolist())
+    bfm = hkl.load('bfm.hkl')
+    rmse_values.append(bfm['mean_test_score'].tolist())
+    bfm_svdpp = hkl.load('bfm_svdpp.hkl')
+    rmse_values.append(bfm_svdpp['mean_test_score'].tolist())
+    bfm_svdpp_flipped = hkl.load('bfm_svdpp_flipped.hkl')
+    rmse_values.append(bfm_svdpp_flipped['mean_test_score'].tolist()[4::5])
+
+    ranks = [dict['rank'] for dict in svd['params']]
+    colors = ['red', 'blue', 'green', 'orange', 'purple']
+    markers = ['-x', '-d', '-h', '-s', '-*']
+    labels = ['SVD', 'NMF', 'BFM', 'BFM SVD++', 'BFM SVD++ flipped']
+
+    plot_rmse(ranks, rmse_values, markers, colors, labels, 'rank.png', 'Rank', 'Test RMSE')
+
+
+def call_heatmap():
+    bfm_svdpp_flipped = hkl.load('bfm_svdpp_flipped.hkl')
+    ranks = []
+    samples = []
+    for dict in bfm_svdpp_flipped['params']:
+        ranks.append(dict['rank'])
+        samples.append(dict['samples'])
+    ranks = np.unique(ranks).tolist()
+    samples = np.unique(samples).tolist()
+    heatmap = np.zeros((len(samples), len(ranks)))
+    for i, dict in enumerate(bfm_svdpp_flipped['params']):
+        heatmap[samples.index(dict['samples']), ranks.index(dict['rank'])] = bfm_svdpp_flipped['mean_test_score'][i]
+
+    plot_heatmap(heatmap, ranks, samples)
+
 
 
 if __name__ == '__main__':
-    logger = utils.init(seed=config.RANDOM_STATE)
-    logger.info(f'Using {config.MODEL} model for prediction')
-    # Load data
-    train_pd, val_pd, test_pd = read_data()
-    train_users, train_movies, train_predictions = extract_users_items_predictions(train_pd)
-    val_users, val_movies, val_predictions = extract_users_items_predictions(val_pd)
-    test_users, test_movies, _ = extract_users_items_predictions(test_pd)
-
-    call_rmse_validation(train_users, train_movies, train_predictions, val_users, val_movies, val_predictions)
+    # logger = utils.init(seed=config.RANDOM_STATE)
+    # logger.info(f'Using {config.MODEL} model for prediction')
+    # # Load data
+    # train_pd, val_pd, test_pd = read_data()
+    # train_users, train_movies, train_predictions = extract_users_items_predictions(train_pd)
+    # val_users, val_movies, val_predictions = extract_users_items_predictions(val_pd)
+    # test_users, test_movies, _ = extract_users_items_predictions(test_pd)
+    #
+    # call_rmse_validation(train_users, train_movies, train_predictions, val_users, val_movies, val_predictions)
+    # call_rmse_rank()
 
     # call_rmse_embedding(train_users, train_movies, train_predictions, val_users, val_movies, val_predictions)
     # call_autoencoder_rmse_single_layer(train_users, train_movies, train_predictions, val_users, val_movies, val_predictions)
     #
     # plot_heatmap(np.random.rand(3,2), [1, 2], [4, 5, 6])
+    call_heatmap()

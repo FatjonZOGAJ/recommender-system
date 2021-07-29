@@ -94,8 +94,8 @@ class AutoRec(BaseModel):
         start_time = time.time()
         Cost,Decoder = self.sess.run(
             [self.cost,self.Decoder],
-            feed_dict={self.input_R: self.test_R,
-                       self.input_mask_R: self.test_mask_R})
+            feed_dict={self.input_R: self.train_R,
+                       self.input_mask_R: self.train_mask_R})
 
         self.test_cost_list.append(Cost)
 
@@ -126,7 +126,7 @@ class AutoRec(BaseModel):
         parser.add_argument('--hidden_neuron', type=int, default=500)
         parser.add_argument('--lambda_value', type=float, default=1)
 
-        parser.add_argument('--train_epoch', type=int, default=1000)
+        parser.add_argument('--train_epoch', type=int, default=125)
         parser.add_argument('--batch_size', type=int, default=100)
 
         parser.add_argument('--optimizer_method', choices=['Adam', 'RMSProp'], default='Adam')
