@@ -55,13 +55,23 @@
     However, since GNN based approaches for Collaborative filtering had still not been shown to systematically beat the afore mentioned Bayesian FM for movie recommendation benchmarks \cite{gnn_survey}, we choose rather to focus on improving the current state-of-the-art Bayesian Factorization Machine by ...
 
 
-    \section{Related Work}
-    %TODO might not be necessary only for text filler if needed
+%    \section{Related Work}
+%    %TODO might not be necessary only for text filler if needed
 
 
     \section{Models and Methods}
+    In the following section we describe the different methods we used combined with our baselines and our final best model.
 
-    %TODO add clipping techniques, initialization of missing values, and if done de-biasing
+    %TODO if done de-biasing
+
+    \subsection{Preprocessing: Missing Values Initialization}
+    As the majority of our models depends on the whole data matrix as input, we experiment with a variety of initialization techniques for the unobserved/missing values.
+    Our approaches include replacement by the total mean, user mean and item mean of rankings.
+    We add upon this by enabling a model to be used for predicting the missing values that then get used in another model.
+    This also allows us to iteratively chain multiple models to predict the unobserved values for the respective following one.
+
+    \subsection{Postprocessing: Clipping}
+    % TODO
 
     \subsection{Singular Value Decomposition}
 
@@ -199,6 +209,8 @@
     \end{algorithm}
 
     \subsubsection{Iterative SVD}
+    % maybe only have in results?
+    % TODO: run from 1-10, 20-100
 
     \subsubsection{Ensembles}
 
@@ -213,11 +225,15 @@
     \begin{table}
         \centering
         \resizebox{\columnwidth}{!}{
-            \begin{tabular}{|| c | c | c | c ||}
+            \begin{tabular}{|| c | c | c | c | c ||}
                 \hline
-                \textbf{Model} & \textbf{Params} & \textbf{RMSE}$_{test}$ & \textbf{RMSE}$_{valid}$\\
+                \textbf{Model} & \textbf{Params} & \textbf{ Init Missing } & \textbf{RMSE}$_{test}$ & \textbf{RMSE}$_{valid}$ \\
                 \hline
-                BFM           & Ordered Probits                   & 0.96572                 & \\
+                SVD & Singular Values 2 & total mean  & 1.07131 & \\
+                SVD & Singular Values 2 & user mean  & 1.05584 & \\
+                SVD & Singular Values 2 & item mean  & 1.01375 & \\
+                \hline
+                BFM & Ordered Probits & /  & \textbf{ 0.96572 } & \\
                 \hline
             \end{tabular}
         }
