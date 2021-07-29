@@ -81,7 +81,7 @@ class BaseModel(ABC):
             data = self.use_model_to_init_unobserved(data, mask,
                                                      unobserved_initializer_model,
                                                      train_movies, train_predictions, train_users)
-        self.log_info(f'Used {default_replace} to initialize unobserved entries as model {self.model_nr}')
+        self.log_info(f'Used {default_replace} to initialize unobserved entries as step {self.model_nr}')
 
         return data, mask
 
@@ -108,6 +108,8 @@ class BaseModel(ABC):
     def postprocessing(self, predictions, type):
         if type == 'round_quarters':
             predictions = roundPartial(predictions, 0.25)
+        if type == 'round':
+            predictions = roundPartial(predictions, 1)
         elif type == 'nothing':
             self.log_info('Not doing postprocessing (no clipping either)')
             return predictions

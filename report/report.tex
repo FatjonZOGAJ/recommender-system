@@ -12,7 +12,8 @@
 \usepackage[noabbrev,nameinlink]{cleveref}
 \usepackage{balance}
 \usepackage{nag}       % Issues warnings when best practices in writing LaTeX documents are violated.
-\usepackage{booktabs}   % Improves the typesettings of tables.
+\usepackage{booktabs}
+\usepackage{amsmath}   % Improves the typesettings of tables.
 
 
 \newcommand{\spacing}{\hspace{1cm}}
@@ -55,10 +56,6 @@
     However, since GNN based approaches for Collaborative filtering had still not been shown to systematically beat the afore mentioned Bayesian FM for movie recommendation benchmarks \cite{gnn_survey}, we choose rather to focus on improving the current state-of-the-art Bayesian Factorization Machine by ...
 
 
-%    \section{Related Work}
-%    %TODO might not be necessary only for text filler if needed
-
-
     \section{Models and Methods}
     In the following section we describe the different methods we used combined with our baselines and our final best model.
 
@@ -71,7 +68,11 @@
     This also allows us to iteratively chain multiple models to predict the unobserved values for the respective following one.
 
     \subsection{Postprocessing: Clipping}
-    % TODO
+    As a final step after the prediction we try out various ways to postprocess the output.
+    The default way is a simple clipping between 1 and 5.
+    As the rankings are given as integers, values such as 1.15 do not make a lot of sense.
+    A prediction of the model to be closer to 1 than 2, leads to an "unnecessary" error when it guesses correctly, but outputs real values.
+    We try rounding the outputs to the nearest integer as well as to the nearest quarter (.00, .25, .50, .75).
 
     \subsection{Singular Value Decomposition}
 
@@ -227,17 +228,33 @@
         \resizebox{\columnwidth}{!}{
             \begin{tabular}{|| c | c | c | c | c ||}
                 \hline
-                \textbf{Model} & \textbf{Params} & \textbf{ Init Missing } & \textbf{RMSE}$_{test}$ & \textbf{RMSE}$_{valid}$ \\
+                \textbf{Model} & \textbf{Params}                   & \textbf{ Init Missing } & \textbf{RMSE}$_{test}$ & \textbf{RMSE}$_{valid}$ \\
                 \hline
-                SVD & Singular Values 2 & total mean  & 1.07131 & \\
-                SVD & Singular Values 2 & user mean  & 1.05584 & \\
-                SVD & Singular Values 2 & item mean  & 1.01375 & \\
+                SVD            & Singular Values 2                 & total mean              & 1.07131                &                         \\
+                SVD            & Singular Values 2                 & user mean               & 1.05584                &                         \\
+                SVD            & Singular Values 2                 & item mean               & 1.01375                &                         \\
+                SVD*4          & Singular Values 2                 & item mean               & 0.99306                &                         \\
+                SVD*7          & Singular Values 2                 & item mean               & 0.99123                &                         \\
+                SVD*10         & Singular Values 2                 & item mean               & 0.98817                & 0.98540                 \\
+                SVD*10         & Singular Values 2, Round Quarters & item mean               & 0.99071                &                         \\
                 \hline
-                BFM & Ordered Probits & /  & \textbf{ 0.96572 } & \\
+                NMF            & Singular Values 2                 & total mean              & 1.01375                &                         \\
+                \hline
+                KernelNet      & 50 Iterations                     & zero                    & 1.00031                &                         \\
+                KernelNet      & 150 Iterations                    & zero                    & 0.98603                &                         \\
+                KernelNet      & 300 Iterations                    & zero                    & 0.98894                &                         \\
+                KernelNet      & 450 Iterations                    & zero                    & 0.98860                &                         \\
+                \hline
+                BFM            & Jaccard Similarity                & /                       & 0.96940                &                         \\
+                BFM            & Improved Jacc. Sim.               & /                       & 0.99742                &                         \\
+                BFM            & Ordered Probits                   & /                       & \textbf{ 0.96572 }     &                         \\
+                BFM            & Ordered Probits, Round Quarter    & /                       & 0.96842                &                         \\
                 \hline
             \end{tabular}
         }
-        \caption{We note Root Mean Squared Error (RMSE) on test and validation datasets to compare our baselines.}
+        \caption{We note Root Mean Squared Error (RMSE) on test and validation datasets to compare our baselines.
+        Arithmetic in models such as $x * 4$ or $x + y$ refers to the iterative chaining of multiple models for the initialization of missing values.
+        }
         \label{tab:ablation}
     \end{table}
 

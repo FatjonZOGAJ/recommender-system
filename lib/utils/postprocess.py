@@ -14,7 +14,7 @@ def postprocess(model, predictions, postprocessing, filename):
 
 
 def postprocess_all(model, predictions, filename):
-    for postprocessing in ['default', 'round_quarters', 'nothing']:
+    for postprocessing in ['default', 'round_quarters', 'round', 'nothing']:
         postprocess(model, predictions, postprocessing, filename)
 
 
