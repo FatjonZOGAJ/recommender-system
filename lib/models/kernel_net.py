@@ -2,11 +2,11 @@
 Adapted from https://github.com/lorenzMuller/kernelNet_MovieLens/blob/master/kernelNet_ml1m.py
 '''
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 from easydict import EasyDict as edict
 
 from lib.models.base_model import BaseModel
-from lib.utils.config import config
 
 params = edict()
 params.HIDDEN_UNITS = 500
@@ -14,7 +14,7 @@ params.TESTING = False
 params.LAMBDA_2 = 90.
 params.LAMBDA_SPARSITY = 0.023
 params.N_LAYERS = 2
-params.MAX_ITER = 50 if not params.TESTING else 5  # evaluate performance on test set; breaks l-bfgs loop
+params.MAX_ITER = 25 if not params.TESTING else 5  # evaluate performance on test set; breaks l-bfgs loop
 params.N_EPOCHS = 3  # N_LAYERS * 10
 params.VERBOSE_DISP = False
 
@@ -87,6 +87,8 @@ class KernelNet(BaseModel):
 
         self.fit_init(mask)
 
+        errors = pd.DataFrame({'train_error': [], 'valid_error': []})
+
         # Training and validation loop
         init = tf.global_variables_initializer()
         with tf.Session() as sess:
@@ -96,11 +98,14 @@ class KernelNet(BaseModel):
                 pre = sess.run(self.prediction, feed_dict={self.R: data})  # predict ratings
 
                 error_val = 0 if val_movies is None \
-                    else (mask_val * (np.clip(pre, 1., 5.) - data_val) ** 2).sum() / mask_val.sum()
-                error_train = (mask * (np.clip(pre, 1., 5.) - data) ** 2).sum() / mask.sum()
+                    else np.sqrt((mask_val * (np.clip(pre, 1., 5.) - data_val) ** 2).sum() / mask_val.sum())
+                error_train = np.sqrt((mask * (np.clip(pre, 1., 5.) - data) ** 2).sum() / mask.sum())
+
+                errors = errors.append({'train_error': error_train, 'valid_error': error_val}, ignore_index=True)
+                errors.to_csv(self.config.FINAL_OUTPUT_DIR + '/errors.csv')
 
                 self.log_info(
-                    f'epoch: {i}, validation rmse: {np.round(np.sqrt(error_val), 4)}, train rmse: {np.round(np.sqrt(error_train), 4)}')
+                    f'epoch: {i}, validation rmse: {np.round(np.sqrt(error_val), 4)}, train rmse: {np.round(error_train, 4)}')
 
                 self.reconstructed_matrix = pre
 
@@ -108,8 +113,8 @@ class KernelNet(BaseModel):
                     break
 
                 if not test_movies is None and i + 1 % test_every == 0:
-                    self.log_info(f'Creating submission for epoch {i} with train_err {np.sqrt(error_train)}')
-                    self.predict(test_movies, test_users, True, suffix=f'_e{i}_err{np.sqrt(error_train):.2f}')
+                    self.log_info(f'Creating submission for epoch {i} with train_err {error_train}')
+                    self.predict(test_movies, test_users, True, suffix=f'_e{i}_err{error_train:.2f}')
 
     def predict(self, test_movies, test_users, save_submission, suffix='', postprocessing='default'):
         assert (len(test_users) == len(test_movies)), "users-movies combinations specified should have equal length"
