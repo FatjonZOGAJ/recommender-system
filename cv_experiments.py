@@ -23,13 +23,45 @@ def main():
     X = pd.DataFrame({'user_id': train_users, 'movie_id': train_movies})
     y = pd.DataFrame({'rating': train_predictions})
 
-    parameters = {"samples": [32, 64, 128, 256, 512], "rank": [2, 4, 8, 16, 32, 64, 128], "use_iu": [True, False],
-                  "use_ii": [True, False], 'logger': [logger], 'config': [config]}
-    clf = GridSearchCV(BFM(config, logger), parameters, scoring=make_scorer(mean_squared_error, squared=False), cv=3,
-                       n_jobs=1, verbose=1)
+   # parameters = {"samples": [32, 64, 128, 256, 512], "rank": [2, 4, 6, 8, 10, 12, 16, 20, 24, 28, 32],
+   #               "use_iu": [True], "use_ii": [True], 'logger': [logger], 'config': [config]}
+   # clf = GridSearchCV(BFM(config, logger), parameters, scoring=make_scorer(mean_squared_error, squared=False), cv=3,
+   #                    n_jobs=-1, verbose=1)
+
+   # clf.fit(X, y)
+   # prepare_save_file(clf.cv_results_, 'bfm_svdpp_flipped')
+
+   # parameters = {"samples": [512], "rank": [2, 4, 6, 8, 10, 12, 16, 20, 24, 28, 32],
+   #               "use_iu": [True], "use_ii": [False], 'logger': [logger], 'config': [config]}
+   # clf = GridSearchCV(BFM(config, logger), parameters, scoring=make_scorer(mean_squared_error, squared=False), cv=3,
+   #                    n_jobs=-1, verbose=1)
+
+   # clf.fit(X, y)
+   # prepare_save_file(clf.cv_results_, 'bfm_svdpp')
+
+   # parameters = {"samples": [512], "rank": [2, 4, 6, 8, 10, 12, 16, 20, 24, 28, 32],
+   #               "use_iu": [False], "use_ii": [False], 'logger': [logger], 'config': [config]}
+   # clf = GridSearchCV(BFM(config, logger), parameters, scoring=make_scorer(mean_squared_error, squared=False), cv=3,
+   #                    n_jobs=-1, verbose=1)
+
+   # clf.fit(X, y)
+   # prepare_save_file(clf.cv_results_, 'bfm')
+
+    parameters = {"rank": [2, 4, 6, 8, 10, 12, 16, 20, 24, 28, 32],
+                  'logger': [logger], 'config': [config]}
+    clf = GridSearchCV(SVD(config, logger), parameters, scoring=make_scorer(mean_squared_error, squared=False), cv=3,
+                       n_jobs=-1, verbose=1)
 
     clf.fit(X, y)
-    prepare_save_file(clf.cv_results_, 'bfm')
+    prepare_save_file(clf.cv_results_, 'svd')
+
+    parameters = {"rank": [2, 4, 6, 8, 10, 12, 16, 20, 24, 28, 32],
+                  'logger': [logger], 'config': [config]}
+    clf = GridSearchCV(NMF(config, logger), parameters, scoring=make_scorer(mean_squared_error, squared=False), cv=3,
+                       n_jobs=-1, verbose=1)
+
+    clf.fit(X, y)
+    prepare_save_file(clf.cv_results_, 'nmf')
 
 
 def prepare_save_file(cv_results, name):

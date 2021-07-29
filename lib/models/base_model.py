@@ -60,18 +60,20 @@ class BaseModel(ABC):
             data[user][movie] = pred
             mask[user][movie] = 1
 
+        mean = np.mean(train_predictions)
+
         if default_replace == 'zero':
             pass
         elif default_replace == 'mean':
-            data[mask == 0] = np.mean(train_predictions)
+            data[mask == 0] = mean
         elif default_replace == 'user_mean':
             for i in range(0, config.NUM_USERS):
-                data[i, mask[i, :] == 0] = self.get_non_nan_mean(np.mean(data[i, :][mask[i, :] == 1]),
-                                                                 np.mean(train_predictions))
+                data[i, mask[i, :] == 0] = mean if len(data[i, :][mask[i, :] == 1]) == 0 else np.mean(
+                    data[i, :][mask[i, :] == 1])
         elif default_replace == 'item_mean':
             for i in range(0, config.NUM_MOVIES):
-                data[mask[:, i] == 0, i] = self.get_non_nan_mean(np.mean(data[:, i][mask[:, i] == 1]),
-                                                                 np.mean(train_predictions))
+                data[mask[:, i] == 0, i] = mean if len(data[:, i][mask[:, i] == 1]) == 0 else np.mean(
+                    data[:, i][mask[:, i] == 1])
         else:
             if default_replace not in models.models:
                 raise NotImplementedError('Add other replacement methods')
@@ -84,13 +86,6 @@ class BaseModel(ABC):
         self.log_info(f'Used {default_replace} to initialize unobserved entries as model {self.model_nr}')
 
         return data, mask
-
-    def get_non_nan_mean(self, mean, default):
-        # if no value for a movie/user (e.g. in validation split) TODO: more sophisticated
-        if np.isnan(mean):
-            self.log_info('RuntimeWarning due to no entries in masked row/col. Using overall mean.')
-            mean = default
-        return mean
 
     def use_model_to_init_unobserved(self, data, mask, unobserved_initializer_model, train_movies, train_predictions,
                                      train_users):
