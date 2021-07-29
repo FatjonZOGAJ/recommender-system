@@ -105,7 +105,7 @@ class KernelNet(BaseModel):
                 errors.to_csv(self.config.FINAL_OUTPUT_DIR + '/errors.csv')
 
                 self.log_info(
-                    f'epoch: {i}, validation rmse: {np.round(np.sqrt(error_val), 4)}, train rmse: {np.round(error_train, 4)}')
+                    f'epoch: {i}, validation rmse: {np.round(error_val, 4)}, train rmse: {np.round(error_train, 4)}')
 
                 self.reconstructed_matrix = pre
 
