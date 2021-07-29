@@ -18,7 +18,8 @@ from sklearn.metrics import mean_squared_error, make_scorer
 def main():
     logger = utils.init(seed=config.RANDOM_STATE)
     config.TYPE = 'ALL'
-    train_pd, test_pd = read_data()
+    train_pd, _ = read_data()
+    train_pd = train_pd.sample(frac=1)
     train_users, train_movies, train_predictions = extract_users_items_predictions(train_pd)
     X = pd.DataFrame({'user_id': train_users, 'movie_id': train_movies})
     y = pd.DataFrame({'rating': train_predictions})
@@ -31,13 +32,13 @@ def main():
    # clf.fit(X, y)
    # prepare_save_file(clf.cv_results_, 'bfm_svdpp_flipped')
 
-   # parameters = {"samples": [512], "rank": [2, 4, 6, 8, 10, 12, 16, 20, 24, 28, 32],
-   #               "use_iu": [True], "use_ii": [False], 'logger': [logger], 'config': [config]}
-   # clf = GridSearchCV(BFM(config, logger), parameters, scoring=make_scorer(mean_squared_error, squared=False), cv=3,
-   #                    n_jobs=-1, verbose=1)
+    parameters = {"samples": [512], "rank": [2, 4, 6, 8, 10, 12, 16, 20, 24, 28, 32],
+                  "use_iu": [True], "use_ii": [False], 'logger': [logger], 'config': [config]}
+    clf = GridSearchCV(BFM(config, logger), parameters, scoring=make_scorer(mean_squared_error, squared=False), cv=3,
+                       n_jobs=-1, verbose=1)
 
-   # clf.fit(X, y)
-   # prepare_save_file(clf.cv_results_, 'bfm_svdpp')
+    clf.fit(X, y)
+    prepare_save_file(clf.cv_results_, 'bfm_svdpp')
 
    # parameters = {"samples": [512], "rank": [2, 4, 6, 8, 10, 12, 16, 20, 24, 28, 32],
    #               "use_iu": [False], "use_ii": [False], 'logger': [logger], 'config': [config]}
