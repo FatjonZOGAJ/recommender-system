@@ -1,5 +1,6 @@
 # Submission files
 *.csv
+lib/models/__init__.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
