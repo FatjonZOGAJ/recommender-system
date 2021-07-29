@@ -12,8 +12,7 @@
     \title{Collaborative Filtering}
 
     \author{
-    Filip Batur\spacing Patrik Okanovic\spacing Rafael Sterzinger\spacing Fatjon Zogaj\\
-    Group: Terminators\\
+     Rafael Sterzinger\spacing Fatjon Zogaj \spacing Patrik Okanovic \spacing Filip Batur Stipic\\
     ETH Zurich, Switzerland
     }
 
@@ -23,33 +22,24 @@
 
     \end{abstract}
 
-
     \section{Introduction}
-    %TODO write generally about collaborative filtering/recommender system
-    We look at the task of Collaborative Filtering which is a technique widely used in recommender systems.
-    Recommender systems primarily aim at enabling customers to find items of potential interest.
-    Some possible usages of this are movie recommendations on Netflix, 'Made for you' playlists on spotify or 'Other people also bought' ads on Amazon.
-    Collaborative Filtering makes use of existing knowledge of the general user body and combines this with the specific user information regarding other items to present him/her new recommendations.
-    %TODO write about related problem of netflix price and movielense
-    %TODO Maybe take a look into "On the difficulta on evaluating Baselines" -> old proposed methods perform surprisingly well, also as information on general methods
-    %TODO general mathmatical formulation of the problem, maybe see past reports
-
-    For this problem constellation our dataset consists of rating from 10,000 users on 1,000 movies.
-    We note that not every user (or any for that matter) has rated every movie.
-    With 1,176,952 rating we have a sparsity level of around 12 percent.
-    This information is of further importance as many models and techniques depend on the initialization of non-observed techniques.
-
-
+    
+    The goal of designing Recommender Systems is to recommend the item most likely to be of interest to a target user based on past data. Collaborative Filtering is one of the standard computational methods that attempts to solve this problem by leveraging the similarities between users and items in some vector space \cite{CF_survey}. Usually, the preference data of users to items is represented by a real-valued sparse matrix, given that often users do not rate most movies. In this project we are concerned with completing such sparse matrix, in which each observed entry represents the rating of a user for some movie.
+    
+    In the past two decades, the community had been concerned with constructing benchmarks for different recommendation tasks as well as using novel machine learning techniques in order to tackle the problem in a controlled fashion and in ever more elaborate ways. Some of the most famous benchmarks whose data also represents movie ratings are the Netflix Prize \cite{Netflix} and MovieLens \cite{Movielens}. The most well-established baselines for these benchmarks include Matrix Factorization models, such as Singular Value Decomposition \cite{svd}, Alternating Least-Squares \cite{als} and Bayesian Factorization Machines and its variants \cite{freudenthaler_bayesian_2011, salakhutdinov_bayesian_2008}. The core idea behind such models is that preferences of users over movies are only determined by a small number of unobserved factors. These latent factors are assumed to be feature vectors for each user and movie separately, so that the corresponding rating of a user for a movie is represented by a dot product between the latent feature vector for that particular user and movie (...)
+    
+    Some of the more recent, neural-based successful approaches include: Neural Collaborative Filtering \cite{DBLP:journals/corr/abs-1708-05031}, Autoencoders for Collaborative Filtering \cite{inproceedings} and Neural Graph Collaborative Filtering \cite{ngcf}.
+    
+    Surprisingly enough, the now seminal paper: "On the Difficulty of Evaluating Baselines" by Rendle et al. \cite{rendle_difficulty_2019} showed that by carefully tuning the existing simple baselines by doing more extensive hyperparameter searches, the performance of the baselines can be drastically improved. Most notably, the authors demonstrate that Bayesian Factorization Machines \cite{freudenthaler_bayesian_2011, salakhutdinov_bayesian_2008} when used in conjunction with the common initialization technique SVD++ \cite{koren_factorization_2008} can outperform any result on the MovieLens benchmark up to date. 
+    
+    Since, Graph Neural Networks had especially surged in popularity, and most very recent papers in Collaborative Filtering for Recommendation Systems attempt to exploit their alleged ability to model topologically richer dependencies between users and items, one way or another. However, since GNN based approaches for Collaborative filtering had still not been shown to systematically beat the afore mentioned Bayesian FM for movie recommendation benchmarks \cite{gnn_survey}, we choose rather to focus on improving the current state-of-the-art Bayesian Factorization Machine by ... 
+    
 
     \section{Related Work}
     %TODO might not be necessary only for text filler if needed
 
 
     \section{Models and Methods}
-    In the following section we describe the different methods we used combined with our baseline models and our final best model.
-
-    %TODO mention papers with code and the used baselines from there and from the collab notebook
-    %TODO Maybe take a look into "On the difficulta on evaluating Baselines"
 
     %TODO add clipping techniques, initialization of missing values, and if done de-biasing
 
