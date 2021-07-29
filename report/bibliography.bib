@@ -149,8 +149,9 @@
 }
 @misc{Netflix,
   title = {Netflix Prize},
+  year={2010},
   howpublished = {\url{https://www.netflixprize.com/leaderboard.html}},
-  note = {Accessed: 2010-09-30}
+  urldate = {2021-07-28}
 }
 
 @article{Movielens,
@@ -181,22 +182,36 @@ numpages = {19},
 keywords = {MovieLens, Datasets, ratings, recommendations}
 }
 
-@INPROCEEDINGS{CF_survey,
-  author={Zhang, Ruisheng and Liu, Qi-dong and Chun-Gui and Wei, Jia-Xuan and Huiyi-Ma},
-  booktitle={2014 Second International Conference on Advanced Cloud and Big Data}, 
-  title={Collaborative Filtering for Recommender Systems}, 
-  year={2014},
-  volume={},
-  number={},
-  pages={301-308},
-  doi={10.1109/CBD.2014.47}}
+@inproceedings{CF_survey,
+  author    = {Ruisheng Zhang and
+               Qi{-}dong Liu and
+               Chun Gui and
+               Jiaxuan Wei and
+               Huiyi Ma},
+  title     = {Collaborative Filtering for Recommender Systems},
+  booktitle = {Second International Conference on Advanced Cloud and Big Data, {CBD}
+2014, Huangshan, China, November 20-22, 2014},
+  pages     = {301--308},
+  publisher = {{IEEE} Computer Society},
+  year      = {2014},
+  url       = {https://doi.org/10.1109/CBD.2014.47},
+  doi       = {10.1109/CBD.2014.47},
+  timestamp = {Wed, 16 Oct 2019 14:14:54 +0200},
+  biburl    = {https://dblp.org/rec/conf/cbd/ZhangLGWM14.bib},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
+}
 
 @ARTICLE{svd,
-    author = {Virginia C. Klema and Alan and J. Laub},
-    title = {The singular value decomposition: its computation and some applications},
-    journal = {IEEE Trans. Autom. Control AC-25},
-    year = {1980}
+    author={Klema, V. and Laub, A.},
+    journal={IEEE Transactions on Automatic Control},
+    title={The singular value decomposition: Its computation and some applications},
+    year={1980},
+    volume={25},
+    number={2},
+    pages={164-176},
+    doi={10.1109/TAC.1980.1102314}
 }
+
 @article{ngcf,
   author    = {Xiang Wang and
                Xiangnan He and
@@ -215,10 +230,21 @@ keywords = {MovieLens, Datasets, ratings, recommendations}
   bibsource = {dblp computer science bibliography, https://dblp.org}
 }
 
-@MISC{als,
-    author = {Yehuda Koren and Robert Bell and Chris Volinsky},
-    title = {MATRIX FACTORIZATION TECHNIQUES FOR RECOMMENDER SYSTEMS},
-    year = {2009}
+@article{als,
+    author    = {Yehuda Koren and
+               Robert M. Bell and
+               Chris Volinsky},
+    title     = {Matrix Factorization Techniques for Recommender Systems},
+    journal   = {Computer},
+    volume    = {42},
+    number    = {8},
+    pages     = {30--37},
+    year      = {2009},
+    url       = {https://doi.org/10.1109/MC.2009.263},
+    doi       = {10.1109/MC.2009.263},
+    timestamp = {Wed, 12 Aug 2020 10:29:35 +0200},
+    biburl    = {https://dblp.org/rec/journals/computer/KorenBV09.bib},
+    bibsource = {dblp computer science bibliography, https://dblp.org}
 }
 
 @article{gnn_survey,
@@ -236,4 +262,30 @@ keywords = {MovieLens, Datasets, ratings, recommendations}
   timestamp = {Fri, 06 Nov 2020 15:32:47 +0100},
   biburl    = {https://dblp.org/rec/journals/corr/abs-2011-02260.bib},
   bibsource = {dblp computer science bibliography, https://dblp.org}
+}
+
+@InProceedings{pmlr-v80-muller18a,
+    title = 	 {Kernelized Synaptic Weight Matrices},
+    author =       {Muller, Lorenz and Martel, Julien and Indiveri, Giacomo},
+    booktitle = 	 {Proceedings of the 35th International Conference on Machine Learning},
+    pages = 	 {3654--3663},
+    year = 	 {2018},
+    editor = 	 {Dy, Jennifer and Krause, Andreas},
+    volume = 	 {80},
+    series = 	 {Proceedings of Machine Learning Research},
+    month = 	 {10--15 Jul},
+    publisher =    {PMLR},
+    pdf = 	 {http://proceedings.mlr.press/v80/muller18a/muller18a.pdf},
+    url = 	 {http://proceedings.mlr.press/v80/muller18a.html},
+    abstract = 	 {In this paper we introduce a novel neural network architecture, in which weight matrices are re-parametrized in terms of low-dimensional vectors, interacting through kernel functions. A layer of our network can be interpreted as introducing a (potentially infinitely wide) linear layer between input and output. We describe the theory underpinning this model and validate it with concrete examples, exploring how it can be used to impose structure on neural networks in diverse applications ranging from data visualization to recommender systems. We achieve state-of-the-art performance in a collaborative filtering task (MovieLens).}
+}
+
+@misc{kernelNetGithub,
+    author = {Muller, Lorenz},
+    title = {kernelNet MovieLens-1M},
+    year = {2019},
+    publisher = {GitHub},
+    journal = {GitHub repository},
+    howpublished = {\url{https://github.com/lorenzMuller/kernelNet_MovieLens}},
+    commit = {f4d14d5c4b2afbe1b7f61ca96ff2a2e3e28c9787}
 }

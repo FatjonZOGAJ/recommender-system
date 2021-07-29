@@ -57,7 +57,7 @@ def parse_args():
 
     return parser.parse_args()
 
-
+# adapted from https://gitlab.inf.ethz.ch/COURSE-MP2021/Terminators
 def create_logger(cfg, cfg_name, time_str=None, phase='train'):
     root_output_dir = Path(cfg.OUTPUT_DIR)
     # set up logger
