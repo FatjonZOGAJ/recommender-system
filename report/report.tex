@@ -6,6 +6,7 @@
 \usepackage{graphicx}    % For figure environment
 \usepackage{textcomp}
 \usepackage{amsfonts}
+\usepackage[ruled,vlined]{algorithm2e}
 
 \newcommand{\spacing}{\hspace{1cm}}
 \begin{document}
@@ -122,8 +123,8 @@
     As such, we set the same bounds, effectively splitting into two instead of three sets.
 
     \subsubsection{Movie Features}
-    In order to provide additional information for models, we implement clustering and that way simulate the information
-    about movie categories as in the MovieLens Dataset TODO: CITE. First we initialize the matrix using FM:TODO.
+    In order to provide additional information for models, we implement clustering and that way provide the information
+    about movie categories as in the MovieLens dataset. First we initialize the matrix using FM:TODO.
     Afterwards, we perform Singular Value Decomposition with the rank that showed best results (TODO ref the plot).
     We get the embeddings using the following expression: assuming $A=U\Sigma V^T$ then the matrix corresponding to the movie embeddings is equal to $\Sigma _k ^{\frac{1}{2}} V_k ^T$.
     Finally, after obtaining the k-rank movie embeddings we search for the optimal number of clusters in K-Means clustering.
@@ -138,6 +139,31 @@
     \end{figure}
 
     With these additional user/item features, we append to our feature vector $\mathbf{x}_{ui}$ a dense vector of user similarities from user $u$ to every other user, or the item feature which is either the one-hot-encoded cluster of item $i$ or a dense vector of Euclidean/Mahalanobis distances from item $i$ to every other item.
+    
+    Finally, the following algorithm \ref{algo} shows our proposed procedure for creating additional features to run \textbf{BFM}
+    
+    \begin{algorithm}\label{algo}
+        \SetKwInOut{Input}{input}
+        Initialize missing matrix value with FM\\
+        \For{$k = 0...K$} {
+            Run SVD (rank=$k$)
+            $k_{opt}=argmin_{k, k_{opt}}$RMSE(SVD(rank=$k$))
+        }
+        Movie embeddings= $\sqrt{\Sigma_{k_{opt}}}V_{k_{opt}}^T$\\
+        Perform K-Means(movie embeddings)\\
+        \For{$i = 0...numMovies$} {
+            \For{$j = 0...numMovies$} {
+                $D_{i,j} ^{Eucl} = \|embi - emb_j\|^2$
+            }
+        }
+        \For{$i = 0...numMovies$} {
+            \For{$j = 0...numMovies$} {
+                $D_{i,j} ^{Mahal} = \sqrt{(emb_i-emb_j)^TCov^{-1}(emb_i-emb_j)}$
+            }
+        }
+
+        \caption{Proposed solution for collaborative filtering}
+    \end{algorithm} 
 
     \subsubsection{Iterative SVD}
 
