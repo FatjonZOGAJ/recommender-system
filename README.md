@@ -16,11 +16,15 @@ Contains the following algorithms:
 Use Python version 3.7.4
 
 ### Create environment
-    python -m venv "collaborative-filtering"
+    conda create --name collaborative-filtering python=3.7.4 
+[comment]: <> (    python -m venv "collaborative-filtering")
+
 ### Activate environment
-    source collaborative-filtering/bin/activate
-### Install dependencies
-    pip install --user -r requirements.txt
+    conda activate collaborative-filtering
+[comment]: <> (    source collaborative-filtering/bin/activate)
+
+### Install dependencies 
+    pip install --user -r requirements.txt 
 ### Train the model
     python main.py
 ## Report
