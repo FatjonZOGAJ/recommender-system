@@ -311,19 +311,21 @@
 
     \begin{figure}
         \includegraphics[width=\columnwidth]{figures/rank.png}
-        \caption{TODO}
+        \caption{Validation RMSE for different epoch values}
         \label{fig:rank}
     \end{figure}
 
     \begin{figure}
         \includegraphics[width=\columnwidth]{figures/validation_plot.png}
-        \caption{TODO.}
+        \caption{Test RMSE for different values of rank}
         \label{fig:validation}
     \end{figure}
+    
+    From Fig. \ref{fig:validation} it is visible that overall the KernelNet performed best and Autoencoder made continuous progress, while AutoRec and NCF quickly started to overfit. 
 
     \begin{figure}
         \includegraphics[width=\columnwidth]{figures/heatmap.png}
-        \caption{TODO}
+        \caption{RMSE for different values of sample size and rank produced by grid search}
         \label{fig:Heatmap}
     \end{figure}
 

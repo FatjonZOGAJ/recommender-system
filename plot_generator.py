@@ -103,8 +103,8 @@ def call_rmse_validation(X_train, y_train, X_val, val_predictions):
     np.save('validation_rmse.npy', np.array(rmse_values))
     colors = ['red', 'blue', 'green', 'orange']
     markers = ['-x', '-d', '-h', '-s']
-    plot_rmse(range(0, 125, config.TEST_EVERY), rmse_values, markers, colors, model_names, 'validation_plot.png', 'Epoch',
-              'Validation RMSE')
+    plot_rmse(range(0, 125, 5), rmse_values, markers, colors,
+              ['Autoencoder', 'AutoRec', 'NCF', 'KernelNet'], 'validation_plot.png', 'Epoch', 'Validation RMSE')
 
 
 def call_rmse_rank():
