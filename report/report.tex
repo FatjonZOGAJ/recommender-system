@@ -36,17 +36,19 @@
 
     \section{Introduction}
 
-    The goal of recommender systems is to design a model which is capable of estimating a user's preference on some kind of items e.g. in our case movies.
-    This is usually done by means of collaborative filtering, a standard computational method that attempts to solve this problem by leveraging the similarities between users and items based on previously collected data in some vector space \cite{CF_survey}.
-    This data usually consists of user/item pairs and its corresponding rating which is normally presented in form of a real-valued sparse matrix, given that the majority of user/item pairs is unobserved.
+    The goal of recommender systems is to design a model which is capable of estimating a user's preference on some kind of items, in our case movies.
+    This is usually done by means of collaborative filtering, a standard computational method that attempts to solve this problem by leveraging similarities between users and items based on previously collected data in some vector space~\cite{CF_survey}.
+    This data usually consists of user/item pairs and its corresponding rating which is normally presented in form of a real-valued sparse matrix.
+    This sparseness stems from the majority of user/item pairs being unavailable.
 
     In this project we are concerned with completing such a sparse matrix in the setting of movie recommendation systems, a problem for which benchmarks such as the Netflix Prize \cite{Netflix} and the different versions of MovieLens \cite{Movielens} are already well-established.
-    As such, we viewed these benchmarks as guidelines to select state-of-the-art baselines allowing for a rigorous evaluation of our final results.
+    As such, we viewed these benchmarks as guidelines to select 7 state-of-the-art models allowing for a rigorous evaluation of our final results.
 
-    Among these baselines, we selected some standard techniques, mainly based on matrix factorization, such as Singular Value Decomposition \cite{svd}, Non-Negative Matrix Factorization \cite{6165290}, and different variants Bayesian Factorization Machines \cite{freudenthaler_bayesian_2011, salakhutdinov_bayesian_2008}.
+    Among these baselines, we selected standard techniques, mainly based on matrix factorization.
+    These include Singular Value Decomposition~\cite{svd}, Non-Negative Matrix Factorization~\cite{6165290}, and different variants Bayesian Factorization Machines~\cite{freudenthaler_bayesian_2011, salakhutdinov_bayesian_2008}.
 
-    As an alternative, we explored different more recent neural network based methods such as Neural Collaborative Filtering \cite{DBLP:journals/corr/abs-1708-05031}, Autoencoders \cite{inproceedings} and other autoencoder-like networks.
-    Here, we selected the Kernel Net \cite{pmlr-v80-muller18a} and the AutoRec model \cite{inproceedings}.
+    As an alternative, we explored different, more recent neural network based methods such as Neural Collaborative Filtering~\cite{DBLP:journals/corr/abs-1708-05031}, autoencoders~\cite{inproceedings} and other autoencoder-like networks.
+    Here, we selected the Kernel Net~\cite{pmlr-v80-muller18a}, and the AutoRec model~\cite{inproceedings}.
 
 
     \section{Models and Methods}
