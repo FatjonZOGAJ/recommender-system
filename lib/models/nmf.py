@@ -5,7 +5,7 @@ from lib.utils.config import config
 from easydict import EasyDict as edict
 
 params = edict()
-params.RANK = None
+params.RANK = 24
 params.INIT_PROCEDURE = 'nndsvda'
 params.MAX_ITER = 512
 
