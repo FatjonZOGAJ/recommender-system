@@ -52,6 +52,8 @@ def main():
     predictions = model.create_submission(X_test, postprocessing='clipping')
     postprocess(model, pd.DataFrame({'Id': utils.get_index(test_movies, test_users), 'Prediction': predictions}),
                 postprocessing='round_quarters', filename=config.SUBMISSION_NAME)
+    postprocess(model, pd.DataFrame({'Id': utils.get_index(test_movies, test_users), 'Prediction': predictions}),
+                postprocessing='round', filename=config.SUBMISSION_NAME)
 
 
 if __name__ == '__main__':

@@ -84,6 +84,7 @@ class BaseModel(ABC):
 
             unobserved_initializer_model = models.models[default_replace].get_model(config, logger=self.logger,
                                                                                     model_nr=self.model_nr + 1)
+
             data = self.use_model_to_init_unobserved(data, mask,
                                                      unobserved_initializer_model,
                                                      train_movies, train_predictions, train_users)
@@ -93,11 +94,14 @@ class BaseModel(ABC):
 
     def use_model_to_init_unobserved(self, data, mask, unobserved_initializer_model, train_movies, train_predictions,
                                      train_users):
-        unobserved_initializer_model.fit(train_movies, train_users, train_predictions)
+
+        X_train = pd.DataFrame({'user_id': train_users, 'movie_id': train_movies})
+        y_train = pd.DataFrame({'rating': train_predictions})
+        unobserved_initializer_model.fit(X_train, y_train)
         unobserved_indices = np.argwhere(mask == 0)
         unobserved_users, unobserved_movies = [unobserved_indices[:, c] for c in [0, 1]]
-        predictions = unobserved_initializer_model.predict(unobserved_movies, unobserved_users, False,
-                                                           postprocessing='default')
+        X_test = pd.DataFrame({'user_id': unobserved_users, 'movie_id': unobserved_movies})
+        predictions = unobserved_initializer_model.predict(X_test)
         for i in range(len(unobserved_indices)):
             user, movie = unobserved_indices[i]
             data[user][movie] = predictions[i]
@@ -110,7 +114,7 @@ class BaseModel(ABC):
             print(f'Used {type} for postprocessing')
         elif type == 'clipping':
             print(f'Used {type} for postprocessing')
-        if type == 'round':
+        elif type == 'round':
             predictions = roundPartial(predictions, 1)
             print(f'Used {type} for postprocessing')
         else:
