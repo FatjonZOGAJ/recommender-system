@@ -101,6 +101,8 @@ class KernelNet(BaseModel):
                 error_val = 0 if val_data is None \
                     else np.sqrt((mask_val * (np.clip(pre, 1., 5.) - data_val) ** 2).sum() / mask_val.sum())
                 error_train = np.sqrt((mask * (np.clip(pre, 1., 5.) - data) ** 2).sum() / mask.sum())
+                if i % self.config.TEST_EVERY == 0:
+                    self.validation_rmse.append(np.round(np.sqrt(error_val), 4).item())
 
                 errors = errors.append({'train_error': error_train, 'valid_error': error_val}, ignore_index=True)
                 errors.to_csv(self.config.FINAL_OUTPUT_DIR + '/errors.csv')

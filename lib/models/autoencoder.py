@@ -139,10 +139,11 @@ class AutoEncoder(BaseModel):
                 self.optimizer.step()
                 step += 1
 
-            if epoch % 5 == 0 and self.config.TYPE == 'VAL':
+            if epoch % self.config.TEST_EVERY == 0 and self.config.TYPE == 'VAL':
                 predictions = self.predict(kwargs['val_data'])
                 reconstruction_rmse = get_score(predictions, kwargs['val_predictions'])
                 self.logger.info('At epoch {:3d} loss is {:.4f}'.format(epoch, reconstruction_rmse))
+                self.validation_rmse.append(reconstruction_rmse)
 
     def predict(self, test_data):
         reconstructed_matrix = self.reconstruct_whole_matrix()

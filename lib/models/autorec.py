@@ -87,7 +87,7 @@ class AutoRec(BaseModel):
             batch_cost = batch_cost + Cost
         self.train_cost_list.append(batch_cost)
 
-        if (itr + 1) % self.display_step == 0:
+        if (itr) % self.display_step == 0:
             print("Training //", "Epoch %d //" % (itr), " Total cost = {:.2f}".format(batch_cost),
                   "Elapsed time : %d sec" % (time.time() - start_time))
 
@@ -95,12 +95,12 @@ class AutoRec(BaseModel):
         start_time = time.time()
         Cost, Decoder = self.sess.run(
             [self.cost, self.Decoder],
-            feed_dict={self.input_R: self.test_R,
-                       self.input_mask_R: self.test_mask_R})
+            feed_dict={self.input_R: self.train_R,
+                       self.input_mask_R: self.train_mask_R})
 
         self.test_cost_list.append(Cost)
 
-        if (itr + 1) % self.display_step == 0:
+        if (itr) % self.display_step == 0:
             Estimated_R = Decoder.clip(min=1, max=5)
             unseen_user_test_list = list(self.user_test_set - self.user_train_set)
             unseen_item_test_list = list(self.item_test_set - self.item_train_set)
@@ -116,6 +116,7 @@ class AutoRec(BaseModel):
             RMSE = np.sqrt(numerator / float(denominator))
 
             self.test_rmse_list.append(RMSE)
+            self.validation_rmse.append(RMSE)
 
             print("Testing //", "Epoch %d //" % (itr), " Total cost = {:.2f}".format(Cost),
                   " RMSE = {:.5f}".format(RMSE),
@@ -127,7 +128,7 @@ class AutoRec(BaseModel):
         parser.add_argument('--hidden_neuron', type=int, default=500)
         parser.add_argument('--lambda_value', type=float, default=1)
 
-        parser.add_argument('--train_epoch', type=int, default=2000)
+        parser.add_argument('--train_epoch', type=int, default=125)
         parser.add_argument('--batch_size', type=int, default=100)
 
         parser.add_argument('--optimizer_method', choices=['Adam', 'RMSProp'], default='Adam')
@@ -137,7 +138,7 @@ class AutoRec(BaseModel):
                             help="decay the learning rate for each n epochs")
 
         parser.add_argument('--random_seed', type=int, default=1000)
-        parser.add_argument('--display_step', type=int, default=1)
+        parser.add_argument('--display_step', type=int, default=5)
 
         self.args = parser.parse_args()
         tf1.set_random_seed(self.args.random_seed)
