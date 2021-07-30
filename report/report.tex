@@ -21,9 +21,9 @@
     \title{Collaborative Filtering}
 
     \author{
-    Rafael Sterzinger \spacing Patrik Okanovic \spacing Fatjon Zogaj \spacing Filip Batur Stipic\\
-    Group: Terminators\\
-    Department of Computer Science, ETH Zurich, Switzerland
+        Rafael Sterzinger \spacing Patrik Okanovic \spacing Fatjon Zogaj \spacing Filip Batur Stipic\\
+        Group: Terminators\\
+        Department of Computer Science, ETH Zurich, Switzerland
     }
 
     \maketitle
@@ -185,23 +185,23 @@
         \SetKwInOut{Input}{input}
         Initialize missing matrix value with FM\\
         \For{$k = 0...K$} {
-        Run SVD (rank=$k$)
-        $k_{opt}=argmin_{k, k_{opt}}$RMSE(SVD(rank=$k$))
+            Run SVD (rank=$k$)
+            $k_{opt}=argmin_{k, k_{opt}}$RMSE(SVD(rank=$k$))
         }
-            Movie embeddings= $\sqrt{\Sigma_{k_{opt}}}V_{k_{opt}}^T$\\
-            Perform K-Means(movie embeddings)\\
-            \For{$i = 0...numMovies$} {
+        Movie embeddings= $\sqrt{\Sigma_{k_{opt}}}V_{k_{opt}}^T$\\
+        Perform K-Means(movie embeddings)\\
+        \For{$i = 0...numMovies$} {
             \For{$j = 0...numMovies$} {
-            $D_{i,j} ^{Eucl} = \|embi - emb_j\|^2$
+                $D_{i,j} ^{Eucl} = \|embi - emb_j\|^2$
             }
-                }
-                \For{$i = 0...numMovies$} {
-                \For{$j = 0...numMovies$} {
+        }
+        \For{$i = 0...numMovies$} {
+            \For{$j = 0...numMovies$} {
                 $D_{i,j} ^{Mahal} = \sqrt{(emb_i-emb_j)^TCov^{-1}(emb_i-emb_j)}$
-                }
-                    }
-                    \caption{Proposed solution for collaborative filtering}
-                    \label{alg:algo1}
+            }
+        }
+        \caption{Proposed solution for collaborative filtering}
+        \label{alg:algo1}
     \end{algorithm}
 
     With these additional user/item features, we append to our feature vector $\mathbf{x}_{ui}$ a dense vector of user similarities from user $u$ to every other user, or the item feature which is either the one-hot-encoded cluster of item $i$ or a dense vector of Euclidean/Mahalanobis distances from item $i$ to every other item.
@@ -222,7 +222,7 @@
     Some other models may only show test scores, e.g. if they were directly evaluated on the test data to eliminate
     fitting the model twice (once on 90\% of training data and then on all the training data).
 
-    All mentioned scores are after clipping the outputs to [1, 5].
+    All mentioned scores are after clipping the outputs to [1,~5].
     Using more sophisticated postprocessing techniques like rounding to integers or to quarters lead to a decrease in score of at least 0.002.
 
     % TODO other baselines
@@ -242,47 +242,54 @@
     \begin{table}
         \centering
         \resizebox{\columnwidth}{!}{
-        \begin{tabular}{|| c | c | c | c | c ||}
-            \hline
-            \textbf{Model}    & \textbf{Params}                   & \textbf{ Init Missing } & \textbf{RMSE}$_{test}$ & \textbf{RMSE}$_{valid}$ \\
-            \hline
-            SVD               & Singular Values 3                 & total mean              & 1.0713                 &                         \\
-            SVD               & Singular Values 3                 & user mean               & 1.0558                 &                         \\
-            SVD               & Singular Values 3                 & item mean               & 1.0138                 &                         \\
-            SVD*10            & Singular Values 3                 & item mean               & 0.9882                 & 0.9854                  \\
-            SVD*10            & Singular Values 3, Round Quarters & item mean               & 0.9907                 &                         \\
-            SVD*10            & Singular Values 10                & item mean               & 0.9941                 &                         \\
-            \hline
-            Autoencoder       & 50 Epochs                         & mean                    &                        & 1.33821                 \\
-            Autoencoder       & 150 Epochs                        & mean                    &                        & 1.07578                 \\
-            Autoencoder       & 250 Epochs                        & mean                    &                        & 1.05394                 \\
-            \hline
-            NCF               & 50 Epochs                         & /                       &                        & 0.98203                 \\
-            NCF               & 150 Epochs                        & /                       &                        & 0.97896                 \\
-            NCF               & 250 Epochs                        & /                       &                        & 0.97873                 \\
-            \hline
-            AutoRec           & 5 Epochs                          & zero                    &                        & 1.010084                \\
-            AutoRec           & 25 Epochs                         & zero                    &                        & 1.372371                \\
-            AutoRec           & 50 Epochs                         & zero                    &                        & 1.662538                \\
-            \hline
-            NMF               & Singular Values 2                 & item mean               & 1.0416                 &                         \\
-            \hline
-            KernelNet         & 50 Epochs                         & zero                    & 1.0003                 & 0.9939                  \\
-            KernelNet         & 150 Epochs                        & zero                    & 0.9860                 & 0.9831                  \\
-            KernelNet         & 150 Epochs                        & item mean               &                        & 1.0409                  \\
-            KernelNet         & 450 Epochs                        & zero                    & 0.9886                 &                         \\
-            SVD + KernelNet   & Rank 10 | 150 Epochs              & zero                    &                        & 0.9803                  \\
-            4*SVD + KernelNet & Rank 7 | 150 Epochs               & zero                    &                        & 0.9838                  \\
-            \hline
-            BFM               & Jaccard Similarity                & /                       & 0.9694                 &                         \\
-            BFM               & Improved Jacc. Sim.               & /                       & 0.9974                 &                         \\
-            BFM               & Genre Clustering                  & /                       & 0.96885                &                         \\
-            BFM               & Mahalanobis Dist.                 & /                       & 1.02711                &                         \\
-            BFM               & Euclidean Dist.                   & /                       & 0.99033                &                         \\
-            BFM               & Ordered Probits                   & /                       & \textbf{ 0.9657 }      &                         \\
-            BFM               & Ordered Probits, Round Quarter    & /                       & 0.9684                 &                         \\
-            \hline
-        \end{tabular}
+            \begin{tabular}{|| c | c | c | c | c ||}
+                \hline
+                \textbf{Model}    & \textbf{Params}                   & \textbf{ Init Missing } & \textbf{RMSE}$_{test}$ & \textbf{RMSE}$_{valid}$ \\
+                \hline
+                SVD               & Singular Values 3                 & total mean              & 1.0713                 &                         \\
+                SVD               & Singular Values 3                 & user mean               & 1.0558                 &                         \\
+                SVD               & Singular Values 3                 & item mean               & 1.0138                 &                         \\
+                SVD*4             & Singular Values 3                 & item mean               & 0.9928                 & 0.9893                  \\
+                SVD*7             & Singular Values 3                 & item mean               & 0.9894                 &                         \\
+                SVD*10            & Singular Values 3                 & item mean               & 0.9882                 & 0.9854                  \\
+                SVD*10            & Singular Values 3, Round Quarters & item mean               & 0.9907                 &                         \\
+                SVD*10            & Singular Values 10                & item mean               & 0.9941                 &                         \\
+                \hline
+                NMF               & Singular Values 24                & mean                    &                        & 1.0628                  \\
+                NMF               & Singular Values 24                & user mean               &                        & 1.0497                  \\
+                NMF               & Singular Values 24                & item mean               &                        & 1.0029                  \\
+                NMF               & Singular Values ALL               & item mean               & 1.0416                 &                         \\
+                NMF*10            & Singular Values 24                & item mean               &                        & 0.9946                  \\
+                \hline
+                Autoencoder       & 50 Epochs                         & mean                    &                        & 1.33821                 \\
+                Autoencoder       & 150 Epochs                        & mean                    &                        & 1.07578                 \\
+                Autoencoder       & 250 Epochs                        & mean                    &                        & 1.05394                 \\
+                \hline
+                NCF               & 50 Epochs                         & /                       &                        & 0.98203                 \\
+                NCF               & 150 Epochs                        & /                       &                        & 0.97896                 \\
+                NCF               & 250 Epochs                        & /                       &                        & 0.97873                 \\
+                \hline
+                AutoRec           & 5 Epochs                          & zero                    &                        & 1.010084                \\
+                AutoRec           & 25 Epochs                         & zero                    &                        & 1.372371                \\
+                AutoRec           & 50 Epochs                         & zero                    &                        & 1.662538                \\
+                \hline
+                KernelNet         & 50 Epochs                         & zero                    & 1.0003                 & 0.9939                  \\
+                KernelNet         & 150 Epochs                        & zero                    & 0.9860                 & 0.9831                  \\
+                KernelNet         & 150 Epochs                        & item mean               &                        & 1.0409                  \\
+                KernelNet         & 300 Epochs                        & zero                    & 0.9889                 &                         \\
+                KernelNet         & 450 Epochs                        & zero                    & 0.9886                 &                         \\
+                SVD + KernelNet   & Rank 10 | 150 Epochs              & zero                    &                        & 0.9803                  \\
+                4*SVD + KernelNet & Rank 7 | 150 Epochs               & zero                    &                        & 0.9838                  \\
+                \hline
+                BFM               & Jaccard Similarity                & /                       & 0.9694                 &                         \\
+                BFM               & Improved Jacc. Sim.               & /                       & 0.9974                 &                         \\
+                BFM               & Genre Clustering                  & /                       & 0.96885                &                         \\
+                BFM               & Mahalanobis Dist.                 & /                       & 1.02711                &                         \\
+                BFM               & Euclidean Dist.                   & /                       & 0.99033                &                         \\
+                BFM               & Ordered Probits                   & /                       & \textbf{ 0.9657 }      &                         \\
+                BFM               & Ordered Probits, Round Quarter    & /                       & 0.9684                 &                         \\
+                \hline
+            \end{tabular}
         }
         \caption{We note Root Mean Squared Error (RMSE) on test and validation datasets to compare our baselines.
         Arithmetic in models such as $x * 4$ or $x + y$ refers to the iterative chaining of multiple models for the initialization of missing values.
