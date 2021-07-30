@@ -21,9 +21,9 @@
     \title{Collaborative Filtering}
 
     \author{
-        Rafael Sterzinger \spacing Patrik Okanovic \spacing Fatjon Zogaj \spacing Filip Batur Stipic\\
-        Group: Terminators\\
-        Department of Computer Science, ETH Zurich, Switzerland
+    Rafael Sterzinger \spacing Patrik Okanovic \spacing Fatjon Zogaj \spacing Filip Batur Stipic\\
+    Group: Terminators\\
+    Department of Computer Science, ETH Zurich, Switzerland
     }
 
     \maketitle
@@ -182,34 +182,35 @@
         \label{fig:movie_category_distribution}
     \end{figure}
 
-    With these additional user/item features, we append to our feature vector $\mathbf{x}_{ui}$ a dense vector of user similarities from user $u$ to every other user, or the item feature which is either the one-hot-encoded cluster of item $i$ or a dense vector of Euclidean/Mahalanobis distances from item $i$ to every other item.
-
-    Finally, the following \Cref{alg:algo1} shows our proposed procedure for creating additional features to run \textbf{BFM}
+    The following \Cref{alg:algo1} shows our proposed procedure for creating additional features to run \textbf{BFM}
 
     \begin{algorithm}
         \SetKwInOut{Input}{input}
         Initialize missing matrix value with FM\\
         \For{$k = 0...K$} {
-            Run SVD (rank=$k$)
-            $k_{opt}=argmin_{k, k_{opt}}$RMSE(SVD(rank=$k$))
+        Run SVD (rank=$k$)
+        $k_{opt}=argmin_{k, k_{opt}}$RMSE(SVD(rank=$k$))
         }
-        Movie embeddings= $\sqrt{\Sigma_{k_{opt}}}V_{k_{opt}}^T$\\
-        Perform K-Means(movie embeddings)\\
-        \For{$i = 0...numMovies$} {
+            Movie embeddings= $\sqrt{\Sigma_{k_{opt}}}V_{k_{opt}}^T$\\
+            Perform K-Means(movie embeddings)\\
+            \For{$i = 0...numMovies$} {
             \For{$j = 0...numMovies$} {
-                $D_{i,j} ^{Eucl} = \|embi - emb_j\|^2$
+            $D_{i,j} ^{Eucl} = \|embi - emb_j\|^2$
             }
-        }
-        \For{$i = 0...numMovies$} {
-            \For{$j = 0...numMovies$} {
+                }
+                \For{$i = 0...numMovies$} {
+                \For{$j = 0...numMovies$} {
                 $D_{i,j} ^{Mahal} = \sqrt{(emb_i-emb_j)^TCov^{-1}(emb_i-emb_j)}$
-            }
-        }
-        \caption{Proposed solution for collaborative filtering}
-        \label{alg:algo1}
+                }
+                    }
+                    \caption{Proposed solution for collaborative filtering}
+                    \label{alg:algo1}
     \end{algorithm}
 
-    %TODO write about ordered probtis
+    With these additional user/item features, we append to our feature vector $\mathbf{x}_{ui}$ a dense vector of user similarities from user $u$ to every other user, or the item feature which is either the one-hot-encoded cluster of item $i$ or a dense vector of Euclidean/Mahalanobis distances from item $i$ to every other item.
+
+    Finally, for our best model, we reformulated the task of predicting unobserved user/item pairs to a classification problem instead of a regression task where we calculate the expectation over the different class probabilities.
+
     \subsubsection{Iterative SVD}
     % maybe only have in results?
     % TODO: run from 1-10, 20-100
@@ -227,31 +228,31 @@
     \begin{table}
         \centering
         \resizebox{\columnwidth}{!}{
-            \begin{tabular}{|| c | c | c | c | c ||}
-                \hline
-                \textbf{Model} & \textbf{Params}                   & \textbf{ Init Missing } & \textbf{RMSE}$_{test}$ & \textbf{RMSE}$_{valid}$ \\
-                \hline
-                SVD            & Singular Values 2                 & total mean              & 1.07131                &                         \\
-                SVD            & Singular Values 2                 & user mean               & 1.05584                &                         \\
-                SVD            & Singular Values 2                 & item mean               & 1.01375                &                         \\
-                SVD*4          & Singular Values 2                 & item mean               & 0.99306                &                         \\
-                SVD*7          & Singular Values 2                 & item mean               & 0.99123                &                         \\
-                SVD*10         & Singular Values 2                 & item mean               & 0.98817                & 0.98540                 \\
-                SVD*10         & Singular Values 2, Round Quarters & item mean               & 0.99071                &                         \\
-                \hline
-                NMF            & Singular Values 2                 & total mean              & 1.01375                &                         \\
-                \hline
-                KernelNet      & 50 Iterations                     & zero                    & 1.00031                &                         \\
-                KernelNet      & 150 Iterations                    & zero                    & 0.98603                &                         \\
-                KernelNet      & 300 Iterations                    & zero                    & 0.98894                &                         \\
-                KernelNet      & 450 Iterations                    & zero                    & 0.98860                &                         \\
-                \hline
-                BFM            & Jaccard Similarity                & /                       & 0.96940                &                         \\
-                BFM            & Improved Jacc. Sim.               & /                       & 0.99742                &                         \\
-                BFM            & Ordered Probits                   & /                       & \textbf{ 0.96572 }     &                         \\
-                BFM            & Ordered Probits, Round Quarter    & /                       & 0.96842                &                         \\
-                \hline
-            \end{tabular}
+        \begin{tabular}{|| c | c | c | c | c ||}
+            \hline
+            \textbf{Model} & \textbf{Params}                   & \textbf{ Init Missing } & \textbf{RMSE}$_{test}$ & \textbf{RMSE}$_{valid}$ \\
+            \hline
+            SVD            & Singular Values 2                 & total mean              & 1.07131                &                         \\
+            SVD            & Singular Values 2                 & user mean               & 1.05584                &                         \\
+            SVD            & Singular Values 2                 & item mean               & 1.01375                &                         \\
+            SVD*4          & Singular Values 2                 & item mean               & 0.99306                &                         \\
+            SVD*7          & Singular Values 2                 & item mean               & 0.99123                &                         \\
+            SVD*10         & Singular Values 2                 & item mean               & 0.98817                & 0.98540                 \\
+            SVD*10         & Singular Values 2, Round Quarters & item mean               & 0.99071                &                         \\
+            \hline
+            NMF            & Singular Values 2                 & total mean              & 1.01375                &                         \\
+            \hline
+            KernelNet      & 50 Iterations                     & zero                    & 1.00031                &                         \\
+            KernelNet      & 150 Iterations                    & zero                    & 0.98603                &                         \\
+            KernelNet      & 300 Iterations                    & zero                    & 0.98894                &                         \\
+            KernelNet      & 450 Iterations                    & zero                    & 0.98860                &                         \\
+            \hline
+            BFM            & Jaccard Similarity                & /                       & 0.96940                &                         \\
+            BFM            & Improved Jacc. Sim.               & /                       & 0.99742                &                         \\
+            BFM            & Ordered Probits                   & /                       & \textbf{ 0.96572 }     &                         \\
+            BFM            & Ordered Probits, Round Quarter    & /                       & 0.96842                &                         \\
+            \hline
+        \end{tabular}
         }
         \caption{We note Root Mean Squared Error (RMSE) on test and validation datasets to compare our baselines.
         Arithmetic in models such as $x * 4$ or $x + y$ refers to the iterative chaining of multiple models for the initialization of missing values.
@@ -279,6 +280,7 @@
 
     %TODO importance of shuffeling
     %add info that we trained on whole dataset
+
     \subsection{Comparison to Baselines}
 
     You compare your novel algorithm to \emph{at least two baseline
