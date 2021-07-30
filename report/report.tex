@@ -21,9 +21,9 @@
     \title{Collaborative Filtering}
 
     \author{
-        Rafael Sterzinger \spacing Patrik Okanovic \spacing Fatjon Zogaj \spacing Filip Batur Stipic\\
-        Group: Terminators\\
-        Department of Computer Science, ETH Zurich, Switzerland
+    Rafael Sterzinger \spacing Patrik Okanovic \spacing Fatjon Zogaj \spacing Filip Batur Stipic\\
+    Group: Terminators\\
+    Department of Computer Science, ETH Zurich, Switzerland
     }
 
     \maketitle
@@ -87,7 +87,7 @@
     autoencoder as opposed to item-based autoencoder which achieved a good score in \cite{inproceedings}. Both encoder
     and decoder consist of feedforward neural networks with ReLU activation functions. We train the model by minimizing
     the squared reconstruction loss. Important part of the implementation is the fact that inputs are partially observed
-    and therefore we only update those weights that are associated with observed inputs during backpropagation. Furthermore, we have run the AutoRec imeplementation \cite{inproceedings}, which achieved a state-of-the-art result. Compared to our autoencoder implementation AutoRec is item-based, uses the sigmoid activation function as the final non-linearity and adds regularization to the loss function. 
+    and therefore we only update those weights that are associated with observed inputs during backpropagation. Furthermore, we have run the AutoRec imeplementation \cite{inproceedings}, which achieved a state-of-the-art result. Compared to our autoencoder implementation AutoRec is item-based, uses the sigmoid activation function as the final non-linearity and adds regularization to the loss function.
     TODO: put this in results.We found that when both encoder and decoder consist of one layer increasing the encoded dimension up to 500 makes
     the score better. Furthermore, we have examined the effect of compositionality. Using only two layers in encoder
     and decoder already performs better than any single layer autoencoder.
@@ -185,23 +185,23 @@
         \SetKwInOut{Input}{input}
         Initialize missing matrix value with FM\\
         \For{$k = 0...K$} {
-            Run SVD (rank=$k$)
-            $k_{opt}=argmin_{k, k_{opt}}$RMSE(SVD(rank=$k$))
+        Run SVD (rank=$k$)
+        $k_{opt}=argmin_{k, k_{opt}}$RMSE(SVD(rank=$k$))
         }
-        Movie embeddings= $\sqrt{\Sigma_{k_{opt}}}V_{k_{opt}}^T$\\
-        Perform K-Means(movie embeddings)\\
-        \For{$i = 0...numMovies$} {
+            Movie embeddings= $\sqrt{\Sigma_{k_{opt}}}V_{k_{opt}}^T$\\
+            Perform K-Means(movie embeddings)\\
+            \For{$i = 0...numMovies$} {
             \For{$j = 0...numMovies$} {
-                $D_{i,j} ^{Eucl} = \|embi - emb_j\|^2$
+            $D_{i,j} ^{Eucl} = \|embi - emb_j\|^2$
             }
-        }
-        \For{$i = 0...numMovies$} {
-            \For{$j = 0...numMovies$} {
+                }
+                \For{$i = 0...numMovies$} {
+                \For{$j = 0...numMovies$} {
                 $D_{i,j} ^{Mahal} = \sqrt{(emb_i-emb_j)^TCov^{-1}(emb_i-emb_j)}$
-            }
-        }
-        \caption{Proposed solution for collaborative filtering}
-        \label{alg:algo1}
+                }
+                    }
+                    \caption{Proposed solution for collaborative filtering}
+                    \label{alg:algo1}
     \end{algorithm}
 
     With these additional user/item features, we append to our feature vector $\mathbf{x}_{ui}$ a dense vector of user similarities from user $u$ to every other user, or the item feature which is either the one-hot-encoded cluster of item $i$ or a dense vector of Euclidean/Mahalanobis distances from item $i$ to every other item.
@@ -216,31 +216,42 @@
 
 
     \section{Results}
-    We present our results in \Cref{tab:ablation}, noting the Root Mean Squared Error (RMSE) of our baselines and final model.
+    We present our results in \Cref{tab:ablation}, noting the Root Mean Squared Error \textbf{(RMSE)} of our baselines and final model.
     Test scores refer to the public leaderboard ranking while validation scores refer to a 10\% holdout of our training data.
-    Models without test scores did not perform well enough and were thus only evaluated on the validation dataset.
-    Some other models may only show test scores, e.g. if they were directly evaluated on the test data to eliminate
-    fitting the model twice (once on 90\% of training data and then on all the training data).
+    Models without test scores were just added for completeness as the performance was not satisfactory or other models evaluated in the meantime performed better.
+    Some other models may only show test scores if they were directly evaluated on the test data to eliminate
+    fitting the model multiple times.
 
-    All mentioned scores are after clipping the outputs to [1,~5].
-    Using more sophisticated postprocessing techniques like rounding to integers or to quarters lead to a decrease in score of at least 0.002.
+    All mentioned scores are after clipping the outputs to a range between 1 and 5 or, if stated otherwise, rounded to the closest quarter.
+    However, using more sophisticated postprocessing techniques like rounding to integers or to quarters always resulted in worse performance.
 
     % TODO SVD, NMF Fatjon
 
     % TODO NCF, AutoEncoder, AutoRec
 
+    %TODO importance of shuffeling
+    %add info that we trained on whole dataset
     As our final baseline we compare another Autoencoder, KernelNet.
     For this, replacing the unobserved values with 0 surprisingly fared best.
     Using item mean like with SVDs leads to a much worse validation score of 1.0409 as opposed to 0.9831 when running it for 150 iterations.
     Similarly, running it for more than 150 iterations leads to a marginal decrease in score.
 
     Initializing the unobserved values with a KernelNet and then using that as input for the SVD leads to a validation score of 0.9803 which is an improvement from 0.9831 for the single KernelNet.
+    From Fig. \ref{fig:validation} it is visible that overall the KernelNet performed best and Autoencoder made continuous progress, while AutoRec and NCF quickly started to overfit.
 
-    % TODO BMF Rafael,
-    %TODO importance of shuffeling
-    %add info that we trained on whole dataset
-    
-    From Fig. \ref{fig:validation} it is visible that overall the KernelNet performed best and Autoencoder made continuous progress, while AutoRec and NCF quickly started to overfit. 
+    Regarding our final baseline, we obtained similar overall results for BFM as stated in "On the Difficulty of Evaluating Baselines" \cite{rendle_difficulty_2019}.
+    As can be seen in \cref{tab:ablation}, BFM with implicit user and movie features performed best while standard BFM and BFM with only implicit user features performed worse.
+    For our novelty of adding additional features for users and movies, we were not able to observe an improved.
+    However, we noticed that the distance metrics performed worse when compared to the genre clustering hinting that with some fine-tuning of the cluster sizes, better results might be achievable.
+    Compared to that, the introduction of the Jaccard index to resemble some connection between users performed similarly.
+    An additional experiment that we conducted, was the idea to initialize SVD with the output of a BFM SVD++ flipped predictor and perform SVD iteratively multiple times.
+    While this approach is unsurprisingly the best predictor for SVD due to its much better unobserved value initialization, it did not perform the overall best baseline.
+    As a final approach, we reformulated the problem of predicting user/movie ratings from a regression problem into a classification one.
+    This yielded a slight improvement which we could further decrease by using a lower rank approximation, namely 12 instead of 32.
+    This might be due to the fact users tend to overall rate movies rather positive than negative for which we assume that this phenomenon can be better captured by formulating the problem of predicting user/movie ratings as a classification task.
+
+    A general overview of low rank matrix approximation techniques can be observed in \cref{fig:rank}.
+    Here, we varied the amount of singular values to keep and reported the mean RMSE of a 3-fold cross validation.
 
     \subsection{Comparison to Baselines}
     % TODO: specifically compare best BFM model to the results of the best others, but have the details regarding the model in the description
@@ -254,56 +265,57 @@
     \begin{table}
         \centering
         \resizebox{\columnwidth}{!}{
-            \begin{tabular}{|| c | c | c | c | c ||}
-                \hline
-                \textbf{Model}    & \textbf{Params}                   & \textbf{ Init Missing } & \textbf{RMSE}$_{test}$ & \textbf{RMSE}$_{valid}$ \\
-                \hline
-                SVD               & Rank 3                 & total mean              & 1.0713                 &                         \\
-                SVD               & Rank 3                 & user mean               & 1.0558                 &                         \\
-                SVD               & Rank 3                 & item mean               & 1.0138                 &                         \\
-                SVD*4             & Rank 3                 & item mean               & 0.9928                 & 0.9893                  \\
-                SVD*7             & Rank 3                 & item mean               & 0.9894                 &                         \\
-                SVD*10            & Rank 3                 & item mean               & 0.9882                 & 0.9854                  \\
-                SVD*10            & Rank 3, Round Quarters & item mean               & 0.9907                 &                         \\
-                SVD*10            & Rank 10                & item mean               & 0.9941                 &                         \\
-                \hline
-                NMF               & Rank 24                & mean                    &                        & 1.0628                  \\
-                NMF               & Rank 24                & user mean               &                        & 1.0497                  \\
-                NMF               & Rank 24                & item mean               &                        & 1.0029                  \\
-                NMF               & Rank ALL               & item mean               & 1.0416                 &                         \\
-                NMF*10            & Rank 24                & item mean               &                        & 0.9946                  \\
-                \hline
-                Autoencoder       & 50 Epochs                         & mean                    &                        & 1.33821                 \\
-                Autoencoder       & 150 Epochs                        & mean                    &                        & 1.07578                 \\
-                Autoencoder       & 250 Epochs                        & mean                    &                        & 1.05394                 \\
-                \hline
-                NCF               & 50 Epochs                         & /                       &                        & 0.98203                 \\
-                NCF               & 150 Epochs                        & /                       &                        & 0.97896                 \\
-                NCF               & 250 Epochs                        & /                       &                        & 0.97873                 \\
-                \hline
-                AutoRec           & 5 Epochs                          & zero                    &                        & 1.010084                \\
-                AutoRec           & 25 Epochs                         & zero                    &                        & 1.372371                \\
-                AutoRec           & 50 Epochs                         & zero                    &                        & 1.662538                \\
-                \hline
-                KernelNet         & 50 Epochs                         & zero                    & 1.0003                 & 0.9939                  \\
-                KernelNet         & 150 Epochs                        & zero                    & 0.9860                 & 0.9831                  \\
-                KernelNet         & 150 Epochs                        & item mean               &                        & 1.0409                  \\
-                KernelNet         & 300 Epochs                        & zero                    & 0.9889                 &                         \\
-                KernelNet         & 450 Epochs                        & zero                    & 0.9886                 &                         \\
-                SVD + KernelNet   & Rank 10 | 150 Epochs              & zero                    &                        & 0.9803                  \\
-                5*SVD + KernelNet & Rank 7 | 150 Epochs               & zero                    &                        & 0.9838                  \\
-                5*SVD + KernelNet & Rank 3 | 150 Epochs               & zero                    &                        & 0.9844                  \\
-
-                \hline
-                BFM               & Jaccard Similarity                & /                       & 0.9694                 &                         \\
-                BFM               & Improved Jacc. Sim.               & /                       & 0.9974                 &                         \\
-                BFM               & Genre Clustering                  & /                       & 0.96885                &                         \\
-                BFM               & Mahalanobis Dist.                 & /                       & 1.02711                &                         \\
-                BFM               & Euclidean Dist.                   & /                       & 0.99033                &                         \\
-                BFM               & Ordered Probits                   & /                       & \textbf{ 0.9657 }      &                         \\
-                BFM               & Ordered Probits, Round Quarter    & /                       & 0.9684                 &                         \\
-                \hline
-            \end{tabular}
+        \begin{tabular}{|| c | c | c | c | c ||}
+            \hline
+            \textbf{Model}    & \textbf{Params}                       & \textbf{ Init Missing } & \textbf{RMSE}$_{test}$ & \textbf{RMSE}$_{valid}$ \\
+            \hline
+            SVD               & Rank 3                                & total mean              & 1.0713                 &                         \\
+            SVD               & Rank 3                                & user mean               & 1.0558                 &                         \\
+            SVD               & Rank 3                                & item mean               & 1.0138                 &                         \\
+            SVD*4             & Rank 3                                & item mean               & 0.9928                 & 0.9893                  \\
+            SVD*7             & Rank 3                                & item mean               & 0.9894                 &                         \\
+            SVD*10            & Rank 3                                & item mean               & 0.9882                 & 0.9854                  \\
+            SVD*10            & Rank 3, Round Quarters                & item mean               & 0.9907                 &                         \\
+            SVD*10            & Rank 10                               & item mean               & 0.9941                 &                         \\
+            SVD*5             & Rank 3                                & BFM SVD++ f., Rank 12   & 0.9846                 &                         \\
+            \hline
+            NMF               & Rank 24                               & total mean              &                        & 1.0628                  \\
+            NMF               & Rank 24                               & user mean               &                        & 1.0497                  \\
+            NMF               & Rank 24                               & item mean               &                        & 1.0029                  \\
+            NMF*10            & Rank 24                               & item mean               &                        & 0.9946                  \\
+            \hline
+            Autoencoder       & 50 Epochs                             & total mean              &                        & 1.3382                  \\
+            Autoencoder       & 150 Epochs                            & total mean              &                        & 1.0757                  \\
+            Autoencoder       & 250 Epochs                            & total mean              &                        & 1.0539                  \\
+            \hline
+            NCF               & 50 Epochs                             & /                       &                        & 0.9820                  \\
+            NCF               & 150 Epochs                            & /                       &                        & 0.9789                  \\
+            NCF               & 250 Epochs                            & /                       &                        & 0.9787                  \\
+            \hline
+            AutoRec           & 5 Epochs                              & zero                    &                        & 1.0100                  \\
+            AutoRec           & 25 Epochs                             & zero                    &                        & 1.3723                  \\
+            AutoRec           & 50 Epochs                             & zero                    &                        & 1.6625                  \\
+            \hline
+            KernelNet         & 50 Epochs                             & zero                    & 1.0003                 & 0.9939                  \\
+            KernelNet         & 150 Epochs                            & zero                    & 0.9860                 & 0.9831                  \\
+            KernelNet         & 150 Epochs                            & item mean               &                        & 1.0409                  \\
+            KernelNet         & 450 Epochs                            & zero                    & 0.9886                 &                         \\
+            SVD + KernelNet   & 150 Epochs, Rank 10                   & zero                    &                        & 0.9803                  \\
+            5*SVD + KernelNet & Rank 7 | 150 Epochs                   & zero                    &                        & 0.9838                  \\
+            5*SVD + KernelNet & Rank 3 | 150 Epochs                   & zero                    &                        & 0.9844                  \\
+            \hline
+            BFM               & Rank 12                               & /                       &                        & 0.9727                  \\
+            BFM SVD++         & Rank 12                               & /                       &                        & 0.9664                  \\
+            BFM SVD++ f.      & Rank 12                               & /                       &                        & 0.9655                  \\
+            BFM SVD++ f.      & Jac. Sim., Rank 32                    & /                       & 0.9694                 &                         \\
+            BFM SVD++ f.      & Improved Jacc. Sim., Rank 32          & /                       & 0.9974                 &                         \\
+            BFM SVD++ f.      & Genre Clustering, Rank 32             & /                       & 0.9688                 &                         \\
+            BFM SVD++ f.      & Mahalanobis Dist., Rank 32            & /                       & 1.0271                 &                         \\
+            BFM SVD++ f.      & Euclidean Dist., Rank 32              & /                       & 0.9903                 &                         \\
+            BFM SVD++ f.      & Ordered Prob., Rank 32                & /                       & \textbf{ 0.9657 }      &                         \\
+            BFM SVD++ f.      & Ordered Prob., Round Quarter, Rank 32 & /                       & 0.9684                 &                         \\
+            \hline
+        \end{tabular}
         }
         \caption{We note Root Mean Squared Error (RMSE) on test and validation datasets to compare our baselines.
         Arithmetic in models such as $x * 4$ or $x + y$ refers to the iterative chaining of multiple models for the initialization of missing values.
@@ -322,8 +334,8 @@
         \caption{Test RMSE for different values of rank}
         \label{fig:validation}
     \end{figure}
-    
-    
+
+
 
     \begin{figure}
         \includegraphics[width=\columnwidth]{figures/heatmap.png}
@@ -333,6 +345,10 @@
 
 
     \section{Discussion}
+    As stated in the previous section, the introduction of additional hand-crafted features for users and movies did not yield any significant improvement.
+    We assume that this is mainly based on the statistical learning theory fact that one cannot gain additional information out of existing data.
+    Although, the genre clustering as well as the standard Jaccard index did not perform much worse than the standard baselines, we conclude that hand-crafting features for collaborative filtering is not a direction worth exploring.
+
     % TODO primarily BMF
 
 
