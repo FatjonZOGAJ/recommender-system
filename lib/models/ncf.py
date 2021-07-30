@@ -55,7 +55,7 @@ class NCF(BaseModel):
                 optimizer.step()
                 step += 1
 
-            if epoch % 5 == 0 and self.config.TYPE == 'VAL':
+            if epoch % self.config.TEST_EVERY == 0 and self.config.TYPE == 'VAL':
                 with torch.no_grad():
                     all_predictions = []
                     for users_batch, movies_batch in test_dataloader:
@@ -66,6 +66,7 @@ class NCF(BaseModel):
 
                 reconstuction_rmse = get_score(all_predictions.cpu().numpy(), kwargs['val_predictions'])
                 self.logger.info('At epoch {:3d} loss is {:.4f}'.format(epoch, reconstuction_rmse))
+                self.validation_rmse.append(reconstuction_rmse)
 
     def predict(self, test_data):
         test_users = test_data['user_id'].values
