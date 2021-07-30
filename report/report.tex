@@ -68,8 +68,22 @@
     \subsection{Standard Matrix Factorization based Approaches}
 
     \subsubsection{Singular Value Decomposition}
+    
+    Singular Value Decomposition is a matrix factorization technique that decomposes the original matrix $A \in {\rm I\!R}^{m*n} $ into the form $ A = U \Sigma V $ where U  $U \in {\rm I\!R}^{m*m}$,  $V  \in {\rm I\!R}^{m*n}$ are orthogonal matrices and $\Sigma \in {\rm I\!R}^{m*n}$ is a diagonal matrix whose entries are called singular values.   
+    
+    To apply SVD for Collaborative filtering we assume there exists a latent feature vector for each individual user and movie, so that the rating can be determined by taking the inner product between the feature vectors for the corresponding user and movie. Since the matrix is sparse, we initialize the missing values as mentioned in section A, and apply SVD to obtain the latent feature vectors from the columns of the matrices U and V \cite{svd}. 
+    
+    Since low-rank approximations can be more generalizable, we usually only keep the k best feature vectors for both users and movies associated with the k largest singular values, which is guaranteed to give the best approximation out of all k-rank matrices \cite{Eckart1936}.
+    
+    The downside of this approach is that SVD is highly sensitive to initialization of the imputed values, whereas the benefits are that SVD always exists, is easy to compute and is readily available when using standard libraries in Python such as Numpy.
 
     \subsubsection{Non-Negative Matrix Factorization}
+    
+    Since the ratings in the matrix are nonnegative, another feasible approach is to consider Non-Negative Matrix Factorization, which decomposes our original matrix as $A = WH$, where W and H are both nonnegative \cite{gillis2014nonnegative}. Commonly, it achieves this by optimizing over the Frobenius norm between the difference of the observed entries of the approximation and the original matrix:
+    
+    $$ \frac{1}{2}\|\Pi_{\Omega}(A - WH)\|^2_F$$
+    
+    Although this optimization problem is NP-hard, in practice we can obtain good solutions by leveraging the separability of parameters that depend on U and V respectively, for example by using the Alternating Least Squares algorithm \cite{als}.
 
     \subsubsection{Bayesian Factorization Machines}
     For our last standard matrix factorization based approach, we explored Bayesian Factorization Machines \textbf{(BFM)} which are Bayesian variants of the former known Factorization Machines \textbf{(FM)} \cite{rendle_factorization_2010}.
