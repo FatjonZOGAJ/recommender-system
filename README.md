@@ -33,3 +33,14 @@ To build the report, simply call:
     cd report
 
     bash build-paper.sh 
+
+
+# TODOS
+Sign plagiarism form
+Submit final submission on kaggle
+Start iterative approach experiment
+Write ensemble
+Document code
+Refactor
+Write on how to run the experiments/generate the data
+move parameters into model classes
