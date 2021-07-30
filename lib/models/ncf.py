@@ -101,7 +101,7 @@ class NCFNetwork(nn.Module):
             nn.ReLU(),
             nn.Linear(in_features=64, out_features=16),
             nn.ReLU(),
-            nn.Linear(in_features=16, out_features=1),  # maybe predict per category?
+            nn.Linear(in_features=16, out_features=1),
             nn.ReLU()
         )
 
