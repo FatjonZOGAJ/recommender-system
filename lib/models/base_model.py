@@ -21,6 +21,10 @@ class BaseModel(ABC):
     def predict(self, X):
         pass
 
+    @abstractmethod
+    def create_submission(self, X, suffix='', postprocessing='clipping'):
+        pass
+
     def get_kwargs_data(self, kwargs, *keys):
         output = []
         for k in keys:
@@ -100,15 +104,14 @@ class BaseModel(ABC):
 
         return data
 
-    def postprocessing(self, predictions, type=''):
+    def postprocessing(self, predictions, type='clipping'):
         if type == 'round_quarters':
             predictions = roundPartial(predictions, 0.25)
-        elif type == 'nothing':
-            self.log_info('Not doing postprocessing (no clipping either)')
-            return predictions
+            predictions = np.clip(predictions, 1., 5.)
+            print(f'Used {type} for postprocessing')
+        elif type == 'clipping':
+            predictions = np.clip(predictions, 1., 5.)
+            print(f'Used {type} for postprocessing')
         else:
-            print('Postprocessing step not defined, only doing clipping', end='. ')
-
-        predictions = np.clip(predictions, 1., 5.)
-        print(f'Used {type} for postprocessing')
+            print(f'Invalid preprocessing step: {type}')
         return predictions

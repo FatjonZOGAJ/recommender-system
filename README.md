@@ -30,4 +30,6 @@ To build the report, simply call:
 
     bash build-paper.sh 
 
-#TODO write on how to reproduce best score
+#TODO
+write on how to reproduce best score
+create params in autorec

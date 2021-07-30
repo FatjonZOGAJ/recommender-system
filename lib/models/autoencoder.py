@@ -5,6 +5,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 
 from lib.models.base_model import BaseModel
+from lib.utils.config import config
 from lib.utils.utils import get_score
 
 from easydict import EasyDict as edict
@@ -88,6 +89,7 @@ class AutoEncoder(BaseModel):
 
         super().__init__(logger)
         self.config = config
+
         params.ENCODED_DIMENSION = encoded_dimension
         params.SINGLE_LAYER = single_layer
         params.HIDDEN_DIMENSION = hidden_dimension
@@ -113,9 +115,10 @@ class AutoEncoder(BaseModel):
         self.loss_function = loss_function_autoencoder
         self.optimizer = optim.Adam(self.autoencoder_network.parameters(), lr=params.LEARNING_RATE)
 
-    def fit(self, train_movies, train_users, train_predictions, **kwargs):
+    def fit(self, train_data, train_predictions, **kwargs):
         # Build Dataloaders
-        data, mask = self.create_matrices(train_movies, train_users, train_predictions)
+        data, mask = self.create_matrices(train_data['movie_id'].values, train_data['user_id'].values,
+                                          train_predictions['rating'].values)
         self.data_torch = torch.tensor(data, device=self.device).float()
         self.mask_torch = torch.tensor(mask, device=self.device)
 
@@ -137,17 +140,21 @@ class AutoEncoder(BaseModel):
                 step += 1
 
             if epoch % 5 == 0 and self.config.TYPE == 'VAL':
-                predictions = self.predict(kwargs['val_movies'], kwargs['val_users'], save_submission=False)
+                predictions = self.predict(kwargs['val_data'])
                 reconstruction_rmse = get_score(predictions, kwargs['val_predictions'])
                 self.logger.info('At epoch {:3d} loss is {:.4f}'.format(epoch, reconstruction_rmse))
 
-    def predict(self, test_movies, test_users, save_submission, suffix='', postprocessing='default'):
+    def predict(self, test_data):
         reconstructed_matrix = self.reconstruct_whole_matrix()
-        predictions, index = self._extract_prediction_from_full_matrix(reconstructed_matrix, test_users,
-                                                                       test_movies)
-        predictions = self.postprocessing(predictions, postprocessing)
-        if save_submission:
-            self.save_submission(index, predictions, suffix=suffix)
+        predictions, self.index = self._extract_prediction_from_full_matrix(reconstructed_matrix,
+                                                                            users=test_data['user_id'].values,
+                                                                            movies=test_data['movie_id'].values)
+        predictions = self.postprocessing(predictions)
+        return predictions
+
+    def create_submission(self, X, suffix='', postprocessing='clipping'):
+        predictions = self.postprocessing(self.predict(X), postprocessing)
+        self.save_submission(self.index, predictions, suffix=suffix)
         return predictions
 
     def reconstruct_whole_matrix(self):

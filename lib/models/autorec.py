@@ -19,7 +19,7 @@ class AutoRec(BaseModel):
     def __init__(self, config, logger):
 
         super().__init__(logger)
-        assert config.TYPE == 'VAL', "use validation mode"
+        assert config.TYPE == 'VAL', "Use validation mode 'VAL'"
         self.config = config
 
     def run(self):
@@ -122,7 +122,7 @@ class AutoRec(BaseModel):
                   "Elapsed time : %d sec" % (time.time() - start_time))
             print("=" * 100)
 
-    def fit(self, train_movies, train_users, train_predictions, **kwargs):
+    def fit(self, train_data, train_predictions, **kwargs):
         parser = argparse.ArgumentParser(description='I-AutoRec ')
         parser.add_argument('--hidden_neuron', type=int, default=500)
         parser.add_argument('--lambda_value', type=float, default=1)
@@ -146,27 +146,30 @@ class AutoRec(BaseModel):
         self.configuration = tf1.ConfigProto()
         self.configuration.gpu_options.allow_growth = True
 
-        val_users, val_movies, val_predictions = kwargs['val_users'], kwargs['val_movies'], kwargs['val_predictions']
-        users = np.concatenate((train_users, kwargs['val_users']))
-        movies = np.concatenate((train_movies, kwargs['val_movies']))
-        predictions = np.concatenate((train_predictions, kwargs['val_predictions']))
+        val_data, val_predictions = kwargs['val_data'], kwargs['val_predictions']
+        data = train_data.append(val_data)
+        predictions = np.concatenate([train_predictions['rating'].values, val_predictions])
 
         self.num_users = self.config.NUM_USERS
         self.num_items = self.config.NUM_MOVIES
 
-        self.R, self.mask_R = self.create_matrices(movies, users, predictions, default_replace='zero')
+        self.R, self.mask_R = self.create_matrices(data['movie_id'], data['user_id'].values, predictions,
+                                                   default_replace='zero')
         self.C = self.mask_R.copy()
-        self.train_R, self.train_mask_R = self.create_matrices(train_movies, train_users, train_predictions,
+        self.train_R, self.train_mask_R = self.create_matrices(train_data['movie_id'].values,
+                                                               train_data['user_id'].values,
+                                                               train_predictions['rating'].values,
                                                                default_replace='zero')
-        self.test_R, self.test_mask_R = self.create_matrices(val_movies, val_users, val_predictions,
+        self.test_R, self.test_mask_R = self.create_matrices(val_data['movie_id'].values, val_data['user_id'].values,
+                                                             val_predictions,
                                                              default_replace='zero')
-        self.num_train_ratings = len(train_users)
-        self.num_test_ratings = len(val_users)
+        self.num_train_ratings = train_data.shape[0]
+        self.num_test_ratings = val_data.shape[0]
 
-        self.user_train_set = set(train_users)
-        self.item_train_set = set(train_movies)
-        self.user_test_set = set(val_users)
-        self.item_test_set = set(val_movies)
+        self.user_train_set = set(train_data['user_id'].values)
+        self.item_train_set = set(train_data['movie_id'].values)
+        self.user_test_set = set(val_data['user_id'].values)
+        self.item_test_set = set(val_data['movie_id'].values)
 
         self.hidden_neuron = self.args.hidden_neuron
         self.train_epoch = self.args.train_epoch
@@ -192,21 +195,25 @@ class AutoRec(BaseModel):
         self.result_path = "output/autorec/"
         self.grad_clip = self.args.grad_clip
 
-        with tf1.Session(config=self.configuration) as self.sess:
-            self.run()
+        self.sess = tf1.Session(config=self.configuration)
+        self.run()
 
-    def predict(self, test_movies, test_users, save_submission, suffix='', postprocessing='default'):
+    def predict(self, test_data):
         Cost, Decoder = self.sess.run(
             [self.cost, self.Decoder],
             feed_dict={self.input_R: self.R,
                        self.input_mask_R: self.mask_R})
 
         Estimated_R = Decoder.clip(min=1, max=5)
-        predictions, index = self._extract_prediction_from_full_matrix(Estimated_R, users=test_users,
-                                                                       movies=test_movies)
-        predictions = self.postprocessing(predictions, postprocessing)
-        if save_submission:
-            self.save_submission(index, predictions, suffix)
+        predictions, self.index = self._extract_prediction_from_full_matrix(Estimated_R,
+                                                                            users=test_data['user_id'].values,
+                                                                            movies=test_data['movie_id'].values)
+        predictions = self.postprocessing(predictions)
+        return predictions
+
+    def create_submission(self, X, suffix='', postprocessing='clipping'):
+        predictions = self.postprocessing(self.predict(X), postprocessing)
+        self.save_submission(self.index, predictions, suffix)
         return predictions
 
     def make_records(self):

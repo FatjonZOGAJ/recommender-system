@@ -35,12 +35,15 @@ class NMF(BaseModel):
         self.reconstructed_matrix = W @ H
 
     def predict(self, test_data):
-        assert (len(test_data['user_id']) == len(test_data['movie_id'])), "users-movies combinations specified should have equal length"
-        predictions, index = self._extract_prediction_from_full_matrix(self.reconstructed_matrix, users=test_data['user_id'].values,
-                                                                       movies=test_data['movie_id'].values)
+        predictions, self.index = self._extract_prediction_from_full_matrix(self.reconstructed_matrix,
+                                                                            users=test_data['user_id'].values,
+                                                                            movies=test_data['movie_id'].values)
         predictions = self.postprocessing(predictions)
-       # if save_submission:
-       #     self.save_submission(index, predictions, suffix)
+        return predictions
+
+    def create_submission(self, test_data, suffix='', postprocessing='clipping'):
+        predictions = self.postprocessing(self.predict(test_data), postprocessing)
+        self.save_submission(self.index, predictions, suffix)
         return predictions
 
 

@@ -17,7 +17,7 @@ from lib.models.base_model import BaseModel
 
 params = edict()
 params.FEATURES_PATH = 'data/features/'
-params.RANK = 32
+params.RANK = 12 # rank 12 is best
 params.N_ITER = 512  # does not work if not enough iterations
 params.SAMPLES = None  # default is params.N_ITER - 5
 params.GROUPING = True
@@ -158,8 +158,6 @@ class BFM(BaseModel):
             test_blocks = self._create_relational_blocks(self.df_test)
             print('Starting prediction')
             predictions = self.fm.predict(None, test_blocks)
-            predictions[predictions >= 5] = 5
-            predictions[predictions <= 1] = 1
         else:
             print('Starting prediction')
             n = 10000  # split data frame in chunks of size 10000 to require less memory
@@ -252,6 +250,15 @@ class BFM(BaseModel):
                     X[index, len(movie_id_to_index) + len(user_id_to_index) + self.movie_features[index]] = 1
         return X
 
+    def create_submission(self, X, suffix='', postprocessing='clipping'):
+        predictions = self.postprocessing(self.predict(X), postprocessing)
+        index = [''] * X.shape[0]
+        for i, row in enumerate(X.itertuples()):
+            index[i] = f"r{row.user_id + 1}_c{row.movie_id + 1}"
+        submission = pd.DataFrame({'Id': index, 'Prediction': predictions})
+        submission.to_csv(self.config.SUBMISSION_NAME, index=False)
+        return predictions
+
 
 def jaccard(u, v, user_vs_watched):
     set_u = set(user_vs_watched[u])
@@ -263,13 +270,3 @@ def jaccard(u, v, user_vs_watched):
 
 def get_model(config, logger, model_nr=0):
     return BFM(config, logger, model_nr)
-
-
-def create_submission():
-    # if save_submission:
-    #     index = [''] * len(test_users)
-    #     for i, (user, movie) in enumerate(zip(test_users, test_movies)):
-    #         index[i] = f"r{user + 1}_c{movie + 1}"
-    #     submission = pd.DataFrame({'Id': index, 'Prediction': predictions})
-    #     submission.to_csv(self.config.SUBMISSION_NAME, index=False)
-    return

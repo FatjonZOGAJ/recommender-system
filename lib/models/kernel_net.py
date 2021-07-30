@@ -72,16 +72,17 @@ class KernelNet(BaseModel):
         y = activation(y)
         return y, sparse_reg_term + l2_reg_term
 
-    def fit(self, train_movies, train_users, train_predictions, **kwargs):
-        val_movies, val_users, val_predictions = self.get_kwargs_data(kwargs, 'val_movies', 'val_users',
-                                                                      'val_predictions')
-        test_movies, test_users, test_every = self.get_kwargs_data(kwargs, 'test_movies', 'test_users', 'test_every')
+    def fit(self, train_data, train_predictions, **kwargs):
+        val_data, val_predictions = self.get_kwargs_data(kwargs, 'val_data', 'val_predictions')
+        test_data, test_every = self.get_kwargs_data(kwargs, 'test_data', 'test_every')
 
-        data, mask = self.create_matrices(train_movies, train_users, train_predictions,
+        data, mask = self.create_matrices(train_data['movie_id'].values, train_data['user_id'].values,
+                                          train_predictions['rating'].values,
                                           default_replace=self.config.DEFAULT_VALUES[self.model_nr])
         data, mask = data.T, mask.T  # NOTE transpose
-        if not val_movies is None:
-            data_val, mask_val = self.create_matrices(val_movies, val_users, val_predictions,
+        if not val_data is None:
+            data_val, mask_val = self.create_matrices(val_data['movie_id'].values, val_data['user_id'].values,
+                                                      val_predictions,
                                                       default_replace=self.config.DEFAULT_VALUES[self.model_nr])
             data_val, mask_val = data_val.T, mask_val.T  # NOTE transpose
 
@@ -95,7 +96,7 @@ class KernelNet(BaseModel):
                 self.optimizer.minimize(sess, feed_dict={self.R: data})  # do maxiter optimization steps
                 pre = sess.run(self.prediction, feed_dict={self.R: data})  # predict ratings
 
-                error_val = 0 if val_movies is None \
+                error_val = 0 if val_data is None \
                     else (mask_val * (np.clip(pre, 1., 5.) - data_val) ** 2).sum() / mask_val.sum()
                 error_train = (mask * (np.clip(pre, 1., 5.) - data) ** 2).sum() / mask.sum()
 
@@ -107,18 +108,20 @@ class KernelNet(BaseModel):
                 if i == 0 and params.TESTING:
                     break
 
-                if not test_movies is None and i + 1 % test_every == 0:
+                if not test_data is None and (i + 1) % test_every == 0:
                     self.log_info(f'Creating submission for epoch {i} with train_err {np.sqrt(error_train)}')
-                    self.predict(test_movies, test_users, True, suffix=f'_e{i}_err{np.sqrt(error_train):.2f}')
+                    self.create_submission(test_data, suffix=f'_e{i}_err{np.sqrt(error_train):.2f}')
 
-    def predict(self, test_movies, test_users, save_submission, suffix='', postprocessing='default'):
-        assert (len(test_users) == len(test_movies)), "users-movies combinations specified should have equal length"
-        predictions, index = self._extract_prediction_from_full_matrix(self.reconstructed_matrix.transpose(),
-                                                                       users=test_users,
-                                                                       movies=test_movies)
-        predictions = self.postprocessing(predictions, postprocessing)
-        if save_submission:
-            self.save_submission(index, predictions, suffix=suffix)
+    def predict(self, test_data):
+        predictions, self.index = self._extract_prediction_from_full_matrix(self.reconstructed_matrix.transpose(),
+                                                                            users=test_data['user_id'].values,
+                                                                            movies=test_data['movie_id'].values)
+        predictions = self.postprocessing(predictions)
+        return predictions
+
+    def create_submission(self, X, suffix='', postprocessing='clipping'):
+        predictions = self.postprocessing(self.predict(X), postprocessing)
+        self.save_submission(self.index, predictions, suffix=suffix)
         return predictions
 
 

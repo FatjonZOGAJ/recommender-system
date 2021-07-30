@@ -24,18 +24,19 @@ class NCF(BaseModel):
         self.ncf_network = ncf_network
         self.device = device
 
-    def fit(self, train_movies, train_users, train_predictions, **kwargs):
-        train_users_torch = torch.tensor(train_users, device=self.device)
-        train_movies_torch = torch.tensor(train_movies, device=self.device)
-        train_predictions_torch = torch.tensor(train_predictions, device=self.device)
+    def fit(self, train_data, train_predictions, **kwargs):
+        train_users_torch = torch.tensor(train_data['user_id'].values, device=self.device)
+        train_movies_torch = torch.tensor(train_data['movie_id'].values, device=self.device)
+        train_predictions_torch = torch.tensor(train_predictions['rating'].values, device=self.device)
 
         train_dataloader = DataLoader(
             TensorDataset(train_users_torch, train_movies_torch, train_predictions_torch),
             batch_size=params.BATCH_SIZE)
 
         if self.config.TYPE == 'VAL':
-            test_users_torch = torch.tensor(kwargs['val_users'], device=self.device)
-            test_movies_torch = torch.tensor(kwargs['val_movies'], device=self.device)
+            test_data = kwargs['val_data']
+            test_users_torch = torch.tensor(test_data['user_id'].values, device=self.device)
+            test_movies_torch = torch.tensor(test_data['movie_id'].values, device=self.device)
 
             test_dataloader = DataLoader(
                 TensorDataset(test_users_torch, test_movies_torch),
@@ -66,19 +67,25 @@ class NCF(BaseModel):
                 reconstuction_rmse = get_score(all_predictions.cpu().numpy(), kwargs['val_predictions'])
                 self.logger.info('At epoch {:3d} loss is {:.4f}'.format(epoch, reconstuction_rmse))
 
-    def predict(self, test_movies, test_users, save_submission, suffix='', postprocessing='default'):
+    def predict(self, test_data):
+        test_users = test_data['user_id'].values
+        test_movies = test_data['movie_id'].values
         test_users_torch = torch.tensor(test_users, device=self.device)
         test_movies_torch = torch.tensor(test_movies, device=self.device)
 
-        test_predictions = self.ncf_network(test_users_torch, test_movies_torch)
-        reconstructed_matrix, _ = self.create_matrices(test_movies, test_users, test_predictions,
+        test_predictions = self.ncf_network(test_users_torch, test_movies_torch).detach().numpy()
+        reconstructed_matrix, _ = self.create_matrices(test_movies, test_users,
+                                                       test_predictions,
                                                        default_replace='zero')
 
-        predictions, index = self._extract_prediction_from_full_matrix(reconstructed_matrix, test_users,
-                                                                       test_movies)
-        predictions = self.postprocessing(predictions, postprocessing)
-        if save_submission:
-            self.save_submission(index, predictions, suffix=suffix)
+        predictions, self.index = self._extract_prediction_from_full_matrix(reconstructed_matrix, test_users,
+                                                                            test_movies)
+        predictions = self.postprocessing(predictions)
+        return predictions
+
+    def create_submission(self, X, suffix='', postprocessing='clipping'):
+        predictions = self.postprocessing(self.predict(X), postprocessing)
+        self.save_submission(self.index, predictions, suffix=suffix)
         return predictions
 
 
