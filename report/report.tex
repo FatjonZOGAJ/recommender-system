@@ -97,7 +97,7 @@
     each user and each item to its corresponding latent vector representation. Output of the embedding layers is then
     concatenated and passed on through fully connected feedforward layers with ReLU activation functions. Finally,
     output of the network represents the rating associated with the inputted user and item. Network is trained minimizing
-    the mean squared error loss between the predicted and target rating. TODO: erase? Further, improvements would be
+    the mean squared error loss between the predicted and target rating. Further, improvements would be
     implementing the network as a classification task between the movie rating rather then regressing the predicted rating.
 
     \subsection{Kernel Net}
@@ -163,8 +163,8 @@
 
     \subsubsection{Movie Features}
     In order to provide additional information for models, we implement clustering and that way provide the information
-    about movie categories as in the MovieLens dataset. First we initialize the matrix using FM:TODO.
-    Afterwards, we perform Singular Value Decomposition with the rank that showed best results (TODO ref the plot).
+    about movie categories as in the MovieLens dataset. First we initialize the matrix using BFM.
+    Afterwards, we perform Singular Value Decomposition with the rank that showed best results in \Cref{fig:rank}.
     We get the embeddings using the following expression: assuming $A=U\Sigma V^T$ then the matrix corresponding to the movie embeddings is equal to $\Sigma _k ^{\frac{1}{2}} V_k ^T$.
     Finally, after obtaining the k-rank movie embeddings we search for the optimal number of clusters in K-Means clustering.
     We visualize the clusters in 2 dimensions. Since, visualizing in two dimensions does not easily distinct the optimal
