@@ -116,8 +116,6 @@
     As such, their item-based autoencoder is able to reduce complexity at inference time while improving performance compared to similar models.\cite{pmlr-v80-muller18a}
 
 
-    %\citeauthor{pmlr-v80-muller18a}
-
     \subsection{Bayesian Factorization Machines}
     For our final baseline, we explored Bayesian Factorization Machines \textbf{(BFM)} which are Bayesian variants of the former known Factorization Machines \textbf{(FM)} \cite{rendle_factorization_2010}.
     In its core, FMs build upon the advantages of Support Vector Machines \textbf{(SVM)} but use a factorized parametrization instead of a dense one.
@@ -231,25 +229,25 @@
                 \hline
                 \textbf{Model} & \textbf{Params}                   & \textbf{ Init Missing } & \textbf{RMSE}$_{test}$ & \textbf{RMSE}$_{valid}$ \\
                 \hline
-                SVD            & Singular Values 2                 & total mean              & 1.07131                &                         \\
-                SVD            & Singular Values 2                 & user mean               & 1.05584                &                         \\
-                SVD            & Singular Values 2                 & item mean               & 1.01375                &                         \\
-                SVD*4          & Singular Values 2                 & item mean               & 0.99306                &                         \\
-                SVD*7          & Singular Values 2                 & item mean               & 0.99123                &                         \\
-                SVD*10         & Singular Values 2                 & item mean               & 0.98817                & 0.98540                 \\
-                SVD*10         & Singular Values 2, Round Quarters & item mean               & 0.99071                &                         \\
+                SVD            & Singular Values 2                 & total mean              & 1.0713                &                         \\
+                SVD            & Singular Values 2                 & user mean               & 1.0558                &                         \\
+                SVD            & Singular Values 2                 & item mean               & 1.0138                &                         \\
+                SVD*4          & Singular Values 2                 & item mean               & 0.9928                & 0.9893                         \\
+                SVD*7          & Singular Values 2                 & item mean               & 0.9894                &                         \\
+                SVD*10         & Singular Values 2                 & item mean               & 0.9882                & 0.9854                 \\
+                SVD*10         & Singular Values 2, Round Quarters & item mean               & 0.9907                &                         \\
                 \hline
-                NMF            & Singular Values 2                 & total mean              & 1.01375                &                         \\
+                NMF            & Singular Values 2                 & item mean              & 1.0416                &                         \\
                 \hline
-                KernelNet      & 50 Iterations                     & zero                    & 1.00031                &                         \\
-                KernelNet      & 150 Iterations                    & zero                    & 0.98603                &                         \\
-                KernelNet      & 300 Iterations                    & zero                    & 0.98894                &                         \\
-                KernelNet      & 450 Iterations                    & zero                    & 0.98860                &                         \\
+                KernelNet      & 50 Iterations                     & zero                    & 1.0003                &                         \\
+                KernelNet      & 150 Iterations                    & zero                    & 0.9860                &                         \\
+                KernelNet      & 300 Iterations                    & zero                    & 0.9889                &                         \\
+                KernelNet      & 450 Iterations                    & zero                    & 0.9886                &                         \\
                 \hline
-                BFM            & Jaccard Similarity                & /                       & 0.96940                &                         \\
-                BFM            & Improved Jacc. Sim.               & /                       & 0.99742                &                         \\
-                BFM            & Ordered Probits                   & /                       & \textbf{ 0.96572 }     &                         \\
-                BFM            & Ordered Probits, Round Quarter    & /                       & 0.96842                &                         \\
+                BFM            & Jaccard Similarity                & /                       & 0.9694                &                         \\
+                BFM            & Improved Jacc. Sim.               & /                       & 0.9974                &                         \\
+                BFM            & Ordered Probits                   & /                       & \textbf{ 0.9657 }     &                         \\
+                BFM            & Ordered Probits, Round Quarter    & /                       & 0.9684                &                         \\
                 \hline
             \end{tabular}
         }
