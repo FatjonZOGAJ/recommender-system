@@ -87,8 +87,8 @@
     autoencoder as opposed to item-based autoencoder which achieved a good score in \cite{inproceedings}. Both encoder
     and decoder consist of feedforward neural networks with ReLU activation functions. We train the model by minimizing
     the squared reconstruction loss. Important part of the implementation is the fact that inputs are partially observed
-    and therefore we only update those weights that are associated with observed inputs during backpropagation.
-    We found that when both encoder and decoder consist of one layer increasing the encoded dimension up to 500 makes
+    and therefore we only update those weights that are associated with observed inputs during backpropagation. Furthermore, we have run the AutoRec imeplementation \cite{inproceedings}, which achieved a state-of-the-art result. Compared to our autoencoder implementation AutoRec is item-based, uses the sigmoid activation function as the final non-linearity and adds regularization to the loss function. 
+    TODO: put this in results.We found that when both encoder and decoder consist of one layer increasing the encoded dimension up to 500 makes
     the score better. Furthermore, we have examined the effect of compositionality. Using only two layers in encoder
     and decoder already performs better than any single layer autoencoder.
 
