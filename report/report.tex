@@ -29,7 +29,7 @@
     \maketitle
 
     \begin{abstract}
-    Collaborative Filtering methods have become widely used in a variety of areas. In this work we consider several neural-based and standard matrix factorization methods, focusing on Bayesian Factorization Machines. We propose adding additional features. We propose upgrading Bayesian Factorization Machines with additional features.
+        Collaborative Filtering methods have become widely used in a variety of areas. In this work we consider several neural-based and standard matrix factorization methods, focusing on Bayesian Factorization Machines. We propose adding additional features. We propose upgrading Bayesian Factorization Machines with additional features.
 
     \end{abstract}
 
@@ -45,7 +45,7 @@
 
     Among these baselines, we selected some standard techniques, mainly based on matrix factorization, such as Singular Value Decomposition \cite{svd}, Non-Negative Matrix Factorization \cite{6165290}, and different variants Bayesian Factorization Machines \cite{freudenthaler_bayesian_2011, salakhutdinov_bayesian_2008}.
 
-    As an alternative, we explored different more recent neural network based methods such as Neural Collaborative Filtering \textbf{(NCF)} \cite{DBLP:journals/corr/abs-1708-05031}, Autoencoders \cite{inproceedings} and other autoencoder-like networks.
+    As an alternative, we explored different more recent neural network based methods such as Neural Collaborative Filtering \cite{DBLP:journals/corr/abs-1708-05031}, Autoencoders \cite{inproceedings} and other autoencoder-like networks.
     Here, we selected the Kernel Net \cite{pmlr-v80-muller18a} and the AutoRec model \cite{inproceedings}.
 
 
@@ -63,7 +63,7 @@
     The default way is a simple clipping between 1 and 5.
     As the rankings are given as integers, values such as 1.15 do not make a lot of sense.
     A prediction of the model to be closer to 1 than 2, leads to an "unnecessary" error when it guesses correctly, but outputs real values.
-    We try rounding the outputs to the nearest integer as well as to the nearest quarter (.00, .25, .50, .75).
+    We try rounding the outputs to the nearest integer as well as to the nearest quarter.
 
     \subsection{Standard Matrix Factorization based Approaches}
 
@@ -139,20 +139,13 @@
         \item Movie Features
 
         In order to provide additional information for models, we implement clustering and that way provide the information
-        about movie categories as in the MovieLens dataset. First we initialize the matrix using BFM.
+        about movie categories as in the MovieLens dataset.
+        First we initialize the matrix using BFM.
         Afterwards, we perform Singular Value Decomposition with the rank that showed best results in \Cref{fig:rank}.
         We get the embeddings using the following expression: assuming $A=U\Sigma V^T$ then the matrix corresponding to the movie embeddings is equal to $\Sigma _k ^{\frac{1}{2}} V_k ^T$.
-        Finally, after obtaining the k-rank movie embeddings we search for the optimal number of clusters in K-Means clustering.
-        We visualize the clusters in 2 dimensions. Since, visualizing in two dimensions does not easily distinct the optimal
-        number of clusters we choose 18 as in the MovieLens dataset as the number of clusters. \Cref{fig:movie_category_distribution}
-        shows two peaks in movie categories while other categories look uniformly distributed.
+        Finally, after obtaining the rank $k$ movie embeddings, we search for the optimal number of clusters in K-Means clustering.
+        Since, visualizing in two dimensions does not easily distinct the optimal number of clusters we choose 18 as in the MovieLens dataset as the number of clusters/genres.
     \end{itemize}
-
-    \begin{figure}
-        \includegraphics[width=\columnwidth]{figures/movie_category_distribution.png}
-        \caption{Distribution of movie categories between 18 categories as in MovieLens dataset.}
-        \label{fig:movie_category_distribution}
-    \end{figure}
 
     The following \Cref{alg:algo1} shows our proposed procedure for creating additional features to run \textbf{BFM}
 
@@ -192,12 +185,10 @@
     each user and each item to its corresponding latent vector representation. Output of the embedding layers is then
     concatenated and passed on through fully connected feedforward layers with ReLU activation functions. Finally,
     output of the network represents the rating associated with the inputted user and item. Network is trained minimizing
-    the mean squared error loss between the predicted and target rating. TODO: erase? Further, improvements would be
-    implementing the network as a classification task between the movie rating rather then regressing the predicted rating.
+    the mean squared error loss between the predicted and target rating.
 
     \subsubsection{Autoencoder}
     An autoencoder is a neural network that is trained to attempt to copy its input to its output.
-    Internally, it has a hidden layer $\textbf{h} \in \mathbb{R}^k$ that describes a code used to represent the input.
     The network may be viewed as consisting of two parts: an encoder function $f: \mathbb{R} ^d \rightarrow \mathbb{R} ^k$ and a
     decoder that produces a reconstruction $g: \mathbb{R} ^k \rightarrow \mathbb{R} ^d$ \cite{Goodfellow-et-al-2016}.
     Autoencoders have proven to achieve good results in collaborative filtering \cite{inproceedings}.
@@ -280,9 +271,9 @@
 
     Regarding our final baseline, we obtained similar overall results for BFM as stated in "On the Difficulty of Evaluating Baselines" \cite{rendle_difficulty_2019}.
     As can be seen in \Cref{tab:ablation}, BFM with implicit user and movie features performed best while standard BFM and BFM with only implicit user features performed worse.
-    For our novelty of adding additional features for users and movies, we were not able to observe an improved.
+    Furthermore, adding additional features for users and movies resulted in similar performance compared to the BFM SVD++ flipped model for almost all of our proposed features.
     However, we noticed that the distance metrics performed worse when compared to the genre clustering hinting that with some fine-tuning of the cluster sizes, better results might be achievable.
-    Compared to that, the introduction of the Jaccard index to resemble some connection between users performed similarly.
+    Compared to that, the introduction of the Jaccard index to resemble some connection between users performed similarly as well whereas the improved version of it actually decreased the performance.
     An additional experiment that we conducted, was the idea to initialize SVD with the output of a BFM SVD++ flipped predictor and perform SVD iteratively multiple times.
     While this approach is unsurprisingly the best predictor for SVD due to its much better unobserved value initialization, it did not perform the overall best baseline.
     As a final approach, we reformulated the problem of predicting user/movie ratings from a regression problem into a classification one.
