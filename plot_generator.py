@@ -158,5 +158,5 @@ if __name__ == '__main__':
     X_test = pd.DataFrame({'user_id': test_users, 'movie_id': test_movies})
 
     call_rmse_rank()
-    # call_rmse_validation(X_train, y_train, X_val, val_predictions)
+    call_rmse_validation(X_train, y_train, X_val, val_predictions)
     call_heatmap()
