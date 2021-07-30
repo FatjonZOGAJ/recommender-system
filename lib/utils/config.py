@@ -15,11 +15,11 @@ config.TRAIN_SIZE = 0.9
 config.TYPE = 'VAL'  # either 'ALL','VAL'
 config.STRATIFY = 'movies'  # stratify the train/test split either with  'movies' or 'users'
 config.TEST_EVERY = 3
-config.MODEL = 'nmf'
+config.MODEL = 'svd'
 
 # allows iterative fitting of a model, initializing it with the results from a previous step or a default value
 # either one of the models, 'zero', 'mean','item_mean' or 'user_mean'
-config.DEFAULT_VALUES = [*np.repeat('nmf', 9), 'item_mean']
+config.DEFAULT_VALUES = [*np.repeat('svd', 4), 'kernel_net', 'zero']
 
 # following adapted from https://gitlab.inf.ethz.ch/COURSE-MP2021/Terminators
 

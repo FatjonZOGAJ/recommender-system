@@ -225,7 +225,9 @@
     All mentioned scores are after clipping the outputs to [1,~5].
     Using more sophisticated postprocessing techniques like rounding to integers or to quarters lead to a decrease in score of at least 0.002.
 
-    % TODO other baselines
+    % TODO SVD, NMF Fatjon
+
+    % TODO NCF, AutoEncoder, AutoRec
 
     As our final baseline we compare another Autoencoder, KernelNet.
     For this, replacing the unobserved values with 0 surprisingly fared best.
@@ -234,8 +236,16 @@
 
     Initializing the unobserved values with a KernelNet and then using that as input for the SVD leads to a validation score of 0.9803 which is an improvement from 0.9831 for the single KernelNet.
 
+    % TODO BMF Rafael,
+    %TODO importance of shuffeling
+    %add info that we trained on whole dataset
 
+    \subsection{Comparison to Baselines}
+    % TODO: specifically compare best BFM model to the results of the best others, but have the details regarding the model in the description
 
+    You compare your novel algorithm to \emph{at least two baseline
+    algorithms}. For the baselines, you can use the implementations you
+    developed as part of the programming assignments.
 
 
 
@@ -246,20 +256,20 @@
                 \hline
                 \textbf{Model}    & \textbf{Params}                   & \textbf{ Init Missing } & \textbf{RMSE}$_{test}$ & \textbf{RMSE}$_{valid}$ \\
                 \hline
-                SVD               & Singular Values 3                 & total mean              & 1.0713                 &                         \\
-                SVD               & Singular Values 3                 & user mean               & 1.0558                 &                         \\
-                SVD               & Singular Values 3                 & item mean               & 1.0138                 &                         \\
-                SVD*4             & Singular Values 3                 & item mean               & 0.9928                 & 0.9893                  \\
-                SVD*7             & Singular Values 3                 & item mean               & 0.9894                 &                         \\
-                SVD*10            & Singular Values 3                 & item mean               & 0.9882                 & 0.9854                  \\
-                SVD*10            & Singular Values 3, Round Quarters & item mean               & 0.9907                 &                         \\
-                SVD*10            & Singular Values 10                & item mean               & 0.9941                 &                         \\
+                SVD               & Rank 3                 & total mean              & 1.0713                 &                         \\
+                SVD               & Rank 3                 & user mean               & 1.0558                 &                         \\
+                SVD               & Rank 3                 & item mean               & 1.0138                 &                         \\
+                SVD*4             & Rank 3                 & item mean               & 0.9928                 & 0.9893                  \\
+                SVD*7             & Rank 3                 & item mean               & 0.9894                 &                         \\
+                SVD*10            & Rank 3                 & item mean               & 0.9882                 & 0.9854                  \\
+                SVD*10            & Rank 3, Round Quarters & item mean               & 0.9907                 &                         \\
+                SVD*10            & Rank 10                & item mean               & 0.9941                 &                         \\
                 \hline
-                NMF               & Singular Values 24                & mean                    &                        & 1.0628                  \\
-                NMF               & Singular Values 24                & user mean               &                        & 1.0497                  \\
-                NMF               & Singular Values 24                & item mean               &                        & 1.0029                  \\
-                NMF               & Singular Values ALL               & item mean               & 1.0416                 &                         \\
-                NMF*10            & Singular Values 24                & item mean               &                        & 0.9946                  \\
+                NMF               & Rank 24                & mean                    &                        & 1.0628                  \\
+                NMF               & Rank 24                & user mean               &                        & 1.0497                  \\
+                NMF               & Rank 24                & item mean               &                        & 1.0029                  \\
+                NMF               & Rank ALL               & item mean               & 1.0416                 &                         \\
+                NMF*10            & Rank 24                & item mean               &                        & 0.9946                  \\
                 \hline
                 Autoencoder       & 50 Epochs                         & mean                    &                        & 1.33821                 \\
                 Autoencoder       & 150 Epochs                        & mean                    &                        & 1.07578                 \\
@@ -279,7 +289,9 @@
                 KernelNet         & 300 Epochs                        & zero                    & 0.9889                 &                         \\
                 KernelNet         & 450 Epochs                        & zero                    & 0.9886                 &                         \\
                 SVD + KernelNet   & Rank 10 | 150 Epochs              & zero                    &                        & 0.9803                  \\
-                4*SVD + KernelNet & Rank 7 | 150 Epochs               & zero                    &                        & 0.9838                  \\
+                5*SVD + KernelNet & Rank 7 | 150 Epochs               & zero                    &                        & 0.9838                  \\
+                5*SVD + KernelNet & Rank 3 | 150 Epochs               & zero                    &                        & 0.9844                  \\
+
                 \hline
                 BFM               & Jaccard Similarity                & /                       & 0.9694                 &                         \\
                 BFM               & Improved Jacc. Sim.               & /                       & 0.9974                 &                         \\
@@ -315,18 +327,9 @@
         \label{fig:Heatmap}
     \end{figure}
 
-    %TODO importance of shuffeling
-    %add info that we trained on whole dataset
-
-    \subsection{Comparison to Baselines}
-    % TODO: specifically compare best BFM model to the best of the others.
-
-    You compare your novel algorithm to \emph{at least two baseline
-    algorithms}. For the baselines, you can use the implementations you
-    developed as part of the programming assignments.
-
 
     \section{Discussion}
+    % TODO primarily BMF
 
 
     \section{Conclusion}
