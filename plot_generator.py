@@ -75,6 +75,7 @@ def plot_heatmap(matrix, x_values, y_values, show_values=False):
 
 
 def plot_rmse(rank, rmse_values, markers, colors, labels, path, x_title, y_title):
+    plt.figure()
     for i in range(len(rmse_values)):
         plt.plot(rank, rmse_values[i], markers[i], c=colors[i], label=labels[i])
     plt.legend()
@@ -125,7 +126,7 @@ def call_rmse_rank():
     markers = ['-x', '-d', '-h', '-s', '-*']
     labels = ['SVD', 'NMF', 'BFM', 'BFM SVD++', 'BFM SVD++ flipped']
 
-    plot_rmse(ranks, rmse_values, markers, colors, labels, 'rank.png', 'Rank', 'Test RMSE')
+    plot_rmse(ranks, rmse_values, markers, colors, labels, 'rank.png', 'Rank', 'Validation RMSE')
 
 
 def call_heatmap():
