@@ -115,7 +115,6 @@
     acts as regularization.
     As such, their item-based autoencoder is able to reduce complexity at inference time while improving performance compared to similar models.\cite{pmlr-v80-muller18a}
 
-
     \subsection{Bayesian Factorization Machines}
     For our final baseline, we explored Bayesian Factorization Machines \textbf{(BFM)} which are Bayesian variants of the former known Factorization Machines \textbf{(FM)} \cite{rendle_factorization_2010}.
     In its core, FMs build upon the advantages of Support Vector Machines \textbf{(SVM)} but use a factorized parametrization instead of a dense one.
@@ -186,29 +185,28 @@
         \SetKwInOut{Input}{input}
         Initialize missing matrix value with FM\\
         \For{$k = 0...K$} {
-        Run SVD (rank=$k$)
-        $k_{opt}=argmin_{k, k_{opt}}$RMSE(SVD(rank=$k$))
+            Run SVD (rank=$k$)
+            $k_{opt}=argmin_{k, k_{opt}}$RMSE(SVD(rank=$k$))
         }
-            Movie embeddings= $\sqrt{\Sigma_{k_{opt}}}V_{k_{opt}}^T$\\
-            Perform K-Means(movie embeddings)\\
-            \For{$i = 0...numMovies$} {
+        Movie embeddings= $\sqrt{\Sigma_{k_{opt}}}V_{k_{opt}}^T$\\
+        Perform K-Means(movie embeddings)\\
+        \For{$i = 0...numMovies$} {
             \For{$j = 0...numMovies$} {
-            $D_{i,j} ^{Eucl} = \|embi - emb_j\|^2$
+                $D_{i,j} ^{Eucl} = \|embi - emb_j\|^2$
             }
-                }
-                \For{$i = 0...numMovies$} {
-                \For{$j = 0...numMovies$} {
+        }
+        \For{$i = 0...numMovies$} {
+            \For{$j = 0...numMovies$} {
                 $D_{i,j} ^{Mahal} = \sqrt{(emb_i-emb_j)^TCov^{-1}(emb_i-emb_j)}$
-                }
-                    }
-                    \caption{Proposed solution for collaborative filtering}
-                    \label{alg:algo1}
+            }
+        }
+        \caption{Proposed solution for collaborative filtering}
+        \label{alg:algo1}
     \end{algorithm}
 
     With these additional user/item features, we append to our feature vector $\mathbf{x}_{ui}$ a dense vector of user similarities from user $u$ to every other user, or the item feature which is either the one-hot-encoded cluster of item $i$ or a dense vector of Euclidean/Mahalanobis distances from item $i$ to every other item.
 
     Finally, for our best model, we reformulated the task of predicting unobserved user/item pairs to a classification problem instead of a regression task where we calculate the expectation over the different class probabilities.
-
 
     \subsubsection{Iterative SVD}
     % maybe only have in results?
@@ -217,39 +215,60 @@
     \subsubsection{Ensembles}
 
 
-    \section{Results and Discussion}
+    \section{Results}
     We present our results in \Cref{tab:ablation}, noting the Root Mean Squared Error (RMSE) of our baselines and final model.
     Test scores refer to the public leaderboard ranking while validation scores refer to a 10\% holdout of our training data.
     Models without test scores did not perform well enough and were thus only evaluated on the validation dataset.
     Some other models may only show test scores, e.g. if they were directly evaluated on the test data to eliminate
     fitting the model twice (once on 90\% of training data and then on all the training data).
 
+    All mentioned scores are after clipping the outputs to [1, 5].
+    Using more sophisticated postprocessing techniques like rounding to integers or to quarters lead to a decrease in score of at least 0.002.
+
+    % TODO other baselines
+
+    As our final baseline we compare another Autoencoder, KernelNet.
+    For this, replacing the unobserved values with 0 surprisingly fared best.
+    Using item mean like with SVDs leads to a much worse validation score of 1.0409 as opposed to 0.9831 when running it for 150 iterations.
+    Similarly, running it for more than 150 iterations leads to a marginal decrease in score.
+
+    Initializing the unobserved values with a KernelNet and then using that as input for the SVD leads to a validation score of 0.9803 which is an improvement from 0.9831 for the single KernelNet.
+
+
+
+
+
+
     \begin{table}
         \centering
         \resizebox{\columnwidth}{!}{
             \begin{tabular}{|| c | c | c | c | c ||}
                 \hline
-                \textbf{Model} & \textbf{Params}                   & \textbf{ Init Missing } & \textbf{RMSE}$_{test}$ & \textbf{RMSE}$_{valid}$ \\
+                \textbf{Model}    & \textbf{Params}                   & \textbf{ Init Missing } & \textbf{RMSE}$_{test}$ & \textbf{RMSE}$_{valid}$ \\
                 \hline
-                SVD            & Singular Values 2                 & total mean              & 1.0713                &                         \\
-                SVD            & Singular Values 2                 & user mean               & 1.0558                &                         \\
-                SVD            & Singular Values 2                 & item mean               & 1.0138                &                         \\
-                SVD*4          & Singular Values 2                 & item mean               & 0.9928                & 0.9893                         \\
-                SVD*7          & Singular Values 2                 & item mean               & 0.9894                &                         \\
-                SVD*10         & Singular Values 2                 & item mean               & 0.9882                & 0.9854                 \\
-                SVD*10         & Singular Values 2, Round Quarters & item mean               & 0.9907                &                         \\
+                SVD               & Singular Values 3                 & total mean              & 1.0713                 &                         \\
+                SVD               & Singular Values 3                 & user mean               & 1.0558                 &                         \\
+                SVD               & Singular Values 3                 & item mean               & 1.0138                 &                         \\
+                SVD*4             & Singular Values 3                 & item mean               & 0.9928                 & 0.9893                  \\
+                SVD*7             & Singular Values 3                 & item mean               & 0.9894                 &                         \\
+                SVD*10            & Singular Values 3                 & item mean               & 0.9882                 & 0.9854                  \\
+                SVD*10            & Singular Values 3, Round Quarters & item mean               & 0.9907                 &                         \\
+                SVD*10            & Singular Values 10                & item mean               & 0.9941                 &                         \\
                 \hline
-                NMF            & Singular Values 2                 & item mean              & 1.0416                &                         \\
+                NMF               & Singular Values 2                 & item mean               & 1.0416                 &                         \\
                 \hline
-                KernelNet      & 50 Iterations                     & zero                    & 1.0003                &                         \\
-                KernelNet      & 150 Iterations                    & zero                    & 0.9860                &                         \\
-                KernelNet      & 300 Iterations                    & zero                    & 0.9889                &                         \\
-                KernelNet      & 450 Iterations                    & zero                    & 0.9886                &                         \\
+                KernelNet         & 50 Epochs                         & zero                    & 1.0003                 & 0.9939                  \\
+                KernelNet         & 150 Epochs                        & zero                    & 0.9860                 & 0.9831                  \\
+                KernelNet         & 150 Epochs                        & item mean               &                        & 1.0409                  \\
+                KernelNet         & 300 Epochs                        & zero                    & 0.9889                 &                         \\
+                KernelNet         & 450 Epochs                        & zero                    & 0.9886                 &                         \\
+                SVD + KernelNet   & Rank 10 | 150 Epochs              & zero                    &                        & 0.9803                  \\
+                4*SVD + KernelNet & Rank 7 | 150 Epochs               & zero                    &                        & 0.9838                  \\
                 \hline
-                BFM            & Jaccard Similarity                & /                       & 0.9694                &                         \\
-                BFM            & Improved Jacc. Sim.               & /                       & 0.9974                &                         \\
-                BFM            & Ordered Probits                   & /                       & \textbf{ 0.9657 }     &                         \\
-                BFM            & Ordered Probits, Round Quarter    & /                       & 0.9684                &                         \\
+                BFM               & Jaccard Similarity                & /                       & 0.9694                 &                         \\
+                BFM               & Improved Jacc. Sim.               & /                       & 0.9974                 &                         \\
+                BFM               & Ordered Probits                   & /                       & \textbf{ 0.9657 }      &                         \\
+                BFM               & Ordered Probits, Round Quarter    & /                       & 0.9684                 &                         \\
                 \hline
             \end{tabular}
         }
@@ -280,12 +299,15 @@
     %TODO importance of shuffeling
     %add info that we trained on whole dataset
 
-
     \subsection{Comparison to Baselines}
+    % TODO: specifically compare best BFM model to the best of the others.
 
     You compare your novel algorithm to \emph{at least two baseline
     algorithms}. For the baselines, you can use the implementations you
     developed as part of the programming assignments.
+
+
+    \section{Discussion}
 
 
     \section{Conclusion}

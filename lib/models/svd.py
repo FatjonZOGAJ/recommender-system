@@ -5,7 +5,7 @@ from lib.utils.config import config
 from easydict import EasyDict as edict
 
 params = edict()
-params.RANK = 3
+params.RANK = 10
 
 
 class SVD(BaseModel):
