@@ -15,15 +15,17 @@
 \usepackage{booktabs}
 \usepackage{amsmath}   % Improves the typesettings of tables.
 
+%\DeclareMathOperator*{\argmin}{\arg\!\min}
+\DeclareMathOperator*{\argmin}{argmin}   % Jan Hlavacek
 
 \newcommand{\spacing}{\hspace{1cm}}
 \begin{document}
     \title{Collaborative Filtering}
 
     \author{
-    Rafael Sterzinger \spacing Patrik Okanovic \spacing Fatjon Zogaj \spacing Filip Batur Stipic\\
-    Group: Terminators\\
-    Department of Computer Science, ETH Zurich, Switzerland
+        Rafael Sterzinger \spacing Patrik Okanovic \spacing Fatjon Zogaj \spacing Filip Batur Stipic\\
+        Group: Terminators\\
+        Department of Computer Science, ETH Zurich, Switzerland
     }
 
     \maketitle
@@ -52,16 +54,16 @@
 
 
     \section{Models and Methods}
-    In the following section we provide a brief overview on the different baselines we selected which served as a starting point for our given task of exploring the field of collaborative filtering.
+    In the following section we provide a brief overview of our different baselines, which served as a starting point for exploring the field of collaborative filtering.
 
-    \subsubsection{Preprocessing: Missing Values Initialization}
+    \subsubsection{Preprocessing: Missing Values Initialization}\label{subsub:missing_init}
     As the majority of our models depends on the whole data matrix as input, we experiment with a variety of initialization techniques for the unobserved/missing values.
     Our approaches include replacement by the total mean, user mean and item mean of rankings.
-    We add upon this by enabling a model to be used for predicting the missing values that then get used in another model.
+    We add upon this by enabling a model to be used for predicting the missing values that then get used as input for another model.
     This also allows us to iteratively chain multiple models to predict the unobserved values for the respective following one.
 
-    \subsubsection{Postprocessing: Clipping}
-    As a final step after the prediction we try out various ways to postprocess the output.
+    \subsubsection{Postprocessing: Clipping/Rounding}
+    As a final step after the prediction we try various ways of postprocessing the output.
     The default way is a simple clipping between 1 and 5.
     As the rankings are given as integers, values such as 1.15 do not make a lot of sense.
     A prediction of the model to be closer to 1 than 2, leads to an "unnecessary" error when it guesses correctly, but outputs real values.
@@ -69,27 +71,29 @@
 
     \subsection{Standard Matrix Factorization based Approaches}
 
-    \subsubsection{Singular Value Decomposition}
+    \subsubsection{Singular Value Decomposition (SVD)}
 
-    Singular Value Decomposition is a matrix factorization technique that decomposes the original matrix $A \in {\rm I\!R}^{m*n} $ into the form $ A = U \Sigma V $ where U  $U \in {\rm I\!R}^{m*m}$,  $V  \in {\rm I\!R}^{m*n}$ are orthogonal matrices and $\Sigma \in {\rm I\!R}^{m*n}$ is a diagonal matrix whose entries are called singular values.
+    SVD is a matrix factorization technique that decomposes the original matrix $A \in {\rm I\!R}^{m*n} $ into the form $ A = U \Sigma V $ where $U \in {\rm I\!R}^{m*m}$,  $V  \in {\rm I\!R}^{m*n}$ are orthogonal matrices and $\Sigma \in {\rm I\!R}^{m*n}$ is a diagonal matrix whose entries are called singular values.
 
-    To apply SVD for Collaborative filtering we assume there exists a latent feature vector for each individual user and movie, so that the rating can be determined by taking the inner product between the feature vectors for the corresponding user and movie. Since the matrix is sparse, we initialize the missing values as mentioned in section A, and apply SVD to obtain the latent feature vectors from the columns of the matrices U and V \cite{svd}.
+    To apply SVD for Collaborative filtering we assume there exists a latent feature vector for each individual user and movie, so that the rating can be determined by taking the inner product between the feature vectors for the corresponding user and movie.
+    Since the matrix is sparse, we initialize the missing values as mentioned in \Cref{subsub:missing_init}, and apply SVD to obtain the latent feature vectors from the columns of the matrices $U$ and $V$~\cite{svd}.
 
-    Since low-rank approximations can be more generalizable, we usually only keep the k best feature vectors for both users and movies associated with the k largest singular values, which is guaranteed to give the best approximation out of all k-rank matrices \cite{Eckart1936}.
+    Since low-rank approximations can be more generalizable, we usually only keep the $k$ best feature vectors for both users and movies associated with the $k$ largest singular values~\cite{Eckart1936}.%, which is guaranteed to give the best approximation out of all k-rank matrices~\cite{Eckart1936}.
 
-    The downside of this approach is that SVD is highly sensitive to initialization of the imputed values, whereas the benefits are that SVD always exists, is easy to compute and is readily available when using standard libraries in Python such as Numpy.
+    One downside of SVDs lies in being highly sensitive to the initialization of the imputed missing values, whereas the benefits are that SVDs always exist, are easy to compute and are readily available in standard libraries.
 
-    \subsubsection{Non-Negative Matrix Factorization}
+    \subsubsection{Non-Negative Matrix Factorization (NMF)}
 
-    Since the ratings in the matrix are nonnegative, another feasible approach is to consider Non-Negative Matrix Factorization, which decomposes our original matrix as $A = WH$, where W and H are both nonnegative \cite{gillis2014nonnegative}. Commonly, it achieves this by optimizing over the Frobenius norm between the difference of the observed entries of the approximation and the original matrix:
+    Since the ratings in the matrix are non-negative, another feasible approach is to consider Non-Negative Matrix Factorization, which decomposes our original matrix into $A = WH$, where $W$ and $H$ are both non-negative~\cite{gillis2014nonnegative}.
+    Commonly, it achieves this by optimizing over the Frobenius norm between the difference of the observed entries of the approximation and the original matrix:
 
     $$ \frac{1}{2}\|\Pi_{\Omega}(A - WH)\|^2_F$$
 
-    Although this optimization problem is NP-hard, in practice we can obtain good solutions by leveraging the separability of parameters that depend on U and V respectively, for example by using the Alternating Least Squares algorithm \cite{als}.
+    Although this optimization problem is NP-hard, in practice we can obtain good solutions by leveraging the separability of parameters that depend on U and V respectively, for example by using the Alternating Least Squares algorithm~\cite{als}.
 
-    \subsubsection{Bayesian Factorization Machines}
-    For our last standard matrix factorization based approach, we explored Bayesian Factorization Machines \textbf{(BFM)} which are Bayesian variants of the former known Factorization Machines \textbf{(FM)} \cite{rendle_factorization_2010}.
-    In its core, FMs build upon the advantages of Support Vector Machines \textbf{(SVM)} but use a factorized parametrization instead of a dense one.
+    \subsubsection{Bayesian Factorization Machines (BFM)}
+    For our last standard matrix factorization based approach, we explored Bayesian Factorization Machines BFM which are Bayesian variants of the former known Factorization Machines (FM)~\cite{rendle_factorization_2010}.
+    In its core, FMs build upon the advantages of Support Vector Machines (SVM) but use a factorized parametrization instead of a dense one.
     With this parametrization, FMs are able to estimate all possible interactions between entries of $\mathbf{X}$ even in setting where the data matrix $\mathbf{X}$ is highly sparse.
     Similarly to SVMs with a polynomial kernel, the FM model equation which captures all single and pairwise interactions, can be formulated as follows:
 
@@ -98,95 +102,89 @@
     Here, $v_i$ denotes a vector in $\mathbb{R}^k$ which describes the $i$-th variable with $k$ dimensions and $\langle \mathbf{v_i},\mathbf{v_j} \rangle$ the interaction between the variables $i$ and $j$.
     Instead of using a fixed weight $w_{ij}$, this factorization via the dot product allows FMs to predict parameters for related interaction, e.g. different users but same movie.
     In the non-Bayesian setting, model parameters are optimized with stochastic gradient descent.
-    Opposed to this are Bayesian variants of FMs where model parameters are estimated via maximum a posteriori estimation by means of Markov Chain Monte Carlo methods for approximate inference \cite{salakhutdinov_bayesian_2008}.
-    This fully Bayesian treatment of FMs does not only increase the accuracy of such a model but also omits the need of exhaustive parameter tuning \cite{freudenthaler_bayesian_2011}.
-    Regarding, the implementation of our baseline, we utilize a package named \textit{myFM} \cite{noauthor_myfm_nodate} which employs Gibbs sampling for approximate inference of the posterior.
-    Besides this standard variant of BFMs, multiple additions have been made by means of exploiting additional implicit information about users, items, and temporal dynamics \cite{rendle_scaling_2013,koren_factorization_2008,koren_collaborative_2009}.
-    In our implementation, we incorporated most of these as well, omitting temporal dynamics due to the absence of this information in our provided dataset.
+    As opposed to this, model parameters of Bayesian variants of FMs are optimized via maximum a posteriori estimation by means of Markov Chain Monte Carlo methods for approximate inference~\cite{salakhutdinov_bayesian_2008}.
+    This Bayesian approach does not only increase accuracy but also omits the need of exhaustive parameter tuning~\cite{freudenthaler_bayesian_2011}.
+    Regarding the implementation of our baseline, we utilize a package named \textit{myFM}~\cite{noauthor_myfm_nodate} which employs Gibbs sampling for approximate inference of the posterior.
+    Multiple additions have been made by means of exploiting additional implicit information about users, items, and temporal dynamics~\cite{rendle_scaling_2013,koren_factorization_2008,koren_collaborative_2009}.
+    We incorporate the majority of these, omittting temporal dynamics due to the absence of this information in our provided dataset.
+%    In our implementation, we incorporated most of these as well, omitting temporal dynamics due to the absence of this information in our provided dataset.
     The two additional features are defined as follows:
     \begin{enumerate}
-        \item Implicit User Feature (Bayesian SVD++) $\Leftrightarrow$ all items consumed by user $u$:
+        \item Implicit User Feature (Bayesian SVD++) $\Leftrightarrow$ all items rated by user $u$:
         $$\mathbf{V}_u=\frac{\Omega_u}{\sqrt{|\{(u,i): (u,i) \in \Omega_u\}|}}$$
-        \item Implicit Item Feature (Bayesian SVD++ flipped) $\Leftrightarrow$ all users that consumed item $i$:
+        \item Implicit Item Feature (Bayesian SVD++ flipped) $\Leftrightarrow$ all users that rated item $i$:
         $$\mathbf{W}_i=\frac{\Omega^T_i}{\sqrt{|\{(u,i): (u,i) \in \Omega^T_i\}|}}$$
     \end{enumerate}
-    After one-hot-encoding users $\mathbf{U}$ and items $\mathbf{I}$, denoted as the identity matrix $I_k$ with corresponding dimension $k$, a single entry in our dataset would have the following form:
+    After one-hot-encoding users $\mathbf{U}$ and items $\mathbf{I}$, denoted as the identity matrix $I_k$ with corresponding dimension $k$, a single entry in our dataset has the following form:
     $$\mathbf{x}_{ui} = [(I_n)_u,\mathbf{V}_u,(I_m)_i,\mathbf{W}_i, r_{ui}]$$
 
     Additionally, datasets commonly used in the setting of collaborative filtering such as the MovieLens dataset include much more detailed information on users/items.
     In the setting of movie recommendations, for instance, the genre or the release date of a movie, a timestamp of when the user gave the rating, or user specific information such as who is friends with whom might be included.
-    As we found that these details might be greatly beneficial for our prediction task, we created features which resemble the previously mentioned ones based on the limited data we were provided.
+    These details contain valuable information and as such, we try to recreate features resembling those. % ones based on the limited data we were provided.
     Here, we concentrated mainly on two aspects, calculating the similarity between users to imitate the "friends of a user" feature, and clustering a movie embedding space to create a "movie genre" feature.
 
-    \begin{itemize}
+    \paragraph{User Features}
+    To embed similarity measures between two users, we analyzed variants of the Jaccard index, the standard one and an improved version of it~\cite{lee_improving_2017}.
+    The standard Jaccard index measures the similarity between two users $u$ and $v$ as follows:
+    $$\text{Jac}(u,v)=\frac{|\mathbf{I}_u \cap \mathbf{I}_v|}{|\mathbf{I}_u \cup \mathbf{I}_v|}$$
+    Furthermore, we experimented with an improved version of the Jaccard index.
+    Here, the set of items $\mathbf{I}_u$ a user $u$ has rated is subdivided into three parts $L,M,$ and $H$ with two boundaries $L_{bd}$ and $H_{bd}$.
+    Given these boundaries the sets are formulated as follows:
+    \begin{align*}
+        &\mathbf{I}_{L,u}=\{i \in \mathbf{I}_u : r_{u,i} \leq L_{bd}\}\\
+        &\mathbf{I}_{M,u}=\{i \in \mathbf{I}_u : L_{bd} < r_{u,i} < H_{bd}\}\\
+        &\mathbf{I}_{H,u}=\{i \in \mathbf{I}_u : H_{bd} \leq r_{u,i}\}\\
+    \end{align*}
+    The improved Jaccard index with these definied subsets is denoted as follows:
+    $$\text{Jac}_{LMH}=\frac{1}{3}(\text{Jac}_L(u,v) + \text{Jac}_M(u,v) + \text{Jac}_H(u,v))$$
+    According to the authors the bound $L_{bd} = 3$ and $H_{bd}=4$ yielded the best results on the MovieLens dataset.
+    As such, we set the same bounds, effectively splitting into two instead of three sets.
 
-        \item User Features
-
-        Regarding the additional user features in the form of similarity measures between two users, we looked at different variants of the Jaccard index, the standard variant and an improved version of it \cite{lee_improving_2017}.
-        The standard Jaccard index measures the similarity between two users u and v as follows:
-        $$\text{Jac}(u,v)=\frac{|\mathbf{I}_u \cap \mathbf{I}_v|}{|\mathbf{I}_u \cup \mathbf{I}_v|}$$
-        Furthermore, we experimented with an improved version of the Jaccard index.
-        Here, the set of items $\mathbf{I}_u$ a user $u$ has consumed is subdivided into three parts $L,M,$ and $H$ with two boundaries $L_{bd}$ and $H_{bd}$.
-        Given these boundaries the sets are formulated as follows:
-        \begin{align*}
-            &\mathbf{I}_{L,u}=\{i \in \mathbf{I}_u : r_{u,i} \leq L_{bd}\}\\
-            &\mathbf{I}_{M,u}=\{i \in \mathbf{I}_u : L_{bd} < r_{u,i} < H_{bd}\}\\
-            &\mathbf{I}_{H,u}=\{i \in \mathbf{I}_u : H_{bd} \leq r_{u,i}\}\\
-        \end{align*}
-        The improved Jaccard index with these definied subsets is denoted as follows:
-        $$\text{Jac}_{LMH}=\frac{1}{3}(\text{Jac}_L(u,v) + \text{Jac}_M(u,v) + \text{Jac}_H(u,v))$$
-        According to the authors the bound $L_{bd} = 3$ and $H_{bd}=4$ yielded the best results on the MovieLens dataset.
-        As such, we set the same bounds, effectively splitting into two instead of three sets.
-
-        \item Movie Features
-
-        In order to provide additional information for models, we implement clustering and that way provide the information
-        about movie categories as in the MovieLens dataset.
-        First we initialize the matrix using BFM.
-        Afterwards, we perform Singular Value Decomposition with the rank that showed best results in \Cref{fig:rank}.
-        We get the embeddings using the following expression: assuming $A=U\Sigma V^T$ then the matrix corresponding to the movie embeddings is equal to $\Sigma _k ^{\frac{1}{2}} V_k ^T$.
-        Finally, after obtaining the rank $k$ movie embeddings, we search for the optimal number of clusters in K-Means clustering.
-        Since, visualizing in two dimensions does not easily distinct the optimal number of clusters we choose 18 as in the MovieLens dataset as the number of clusters/genres.
-    \end{itemize}
+    \paragraph{ Movie Features}
+    To imitate movie categories as in the MovieLens dataset we implement a clustering mechanism.
+%    In order to provide additional information for models, we implement clustering and that way provide the information about movie categories as in the MovieLens dataset.
+    First we initialize the matrix using BFM.
+    Afterwards, we perform Singular Value Decomposition with rank 10 (best result of \Cref{fig:rank}).
+    We get the embeddings using the following expression: assuming $A=U\Sigma V^T$ then the matrix corresponding to the movie embeddings is equal to $\Sigma _k ^{\frac{1}{2}} V_k ^T$.
+    Finally, after obtaining the rank $k$ movie embeddings, we search for the optimal number of clusters in K-Means clustering.
+    Since, visualizing in two dimensions does not easily distinct the optimal number of clusters we choose 18 as in the MovieLens dataset as the number of clusters/genres.
 
     The following \Cref{alg:algo1} shows our proposed procedure for creating additional features to run \textbf{BFM}
 
     \begin{algorithm}
         \SetKwInOut{Input}{input}
-        Initialize missing matrix value with FM\\
-        \For{$k = 0...K$} {
-        Run SVD (rank=$k$)
-        $k_{opt}=argmin_{k, k_{opt}}$RMSE(SVD(rank=$k$))
-        }
-            Movie embeddings= $\sqrt{\Sigma_{k_{opt}}}V_{k_{opt}}^T$\\
-            Perform K-Means(movie embeddings)\\
-            \For{$i = 0...numMovies$} {
+        \# Initialize missing matrix value with FM\\
+        $k_{opt}=\underset{k}{\argmin}$ RMSE(SVD$_{rank=k}$(data))\\
+        Movie embeddings $ = \sqrt{\Sigma_{k_{opt}}}V_{k_{opt}}^T$\\
+        \# Perform K-Means(movie embeddings)\\
+        \For{$i = 0...numMovies$} {
             \For{$j = 0...numMovies$} {
-            $D_{i,j} ^{Eucl} = \|embi - emb_j\|^2$
+                $D_{i,j} ^{Eucl} = \|embi - emb_j\|^2$
             }
-                }
-                \For{$i = 0...numMovies$} {
-                \For{$j = 0...numMovies$} {
+        }
+        \For{$i = 0...numMovies$} {
+            \For{$j = 0...numMovies$} {
                 $D_{i,j} ^{Mahal} = \sqrt{(emb_i-emb_j)^TCov^{-1}(emb_i-emb_j)}$
-                }
-                    }
-                    \caption{Proposed solution for collaborative filtering}
-                    \label{alg:algo1}
+            }
+        }
+        \caption{Proposed solution for collaborative filtering}
+        \label{alg:algo1}
     \end{algorithm}
 
     With these additional user/item features, we append to our feature vector $\mathbf{x}_{ui}$ a dense vector of user similarities from user $u$ to every other user, or the item feature which is either the one-hot-encoded cluster of item $i$ or a dense vector of Euclidean/Mahalanobis distances from item $i$ to every other item.
 
-    Finally, for our best model, we reformulated the task of predicting unobserved user/item pairs to a classification problem instead of a regression task where we calculate the expectation over the different class probabilities.
+    Finally, for our best model, we reformulate the task of predicting unobserved user/item pairs to a classification problem instead of a regression task where we calculate the expectation over the different class probabilities.
 
     \subsection{Neural Network based Approaches}
 
-    \subsubsection{Neural Collaborative Filtering}
-    Neural Collaborative Filtering approach as proposed by He et al. \cite{DBLP:journals/corr/abs-1708-05031}, tries to
+    \subsubsection{Neural Collaborative Filtering (NCF)}
+    Neural Collaborative Filtering as proposed by He et al.~\cite{DBLP:journals/corr/abs-1708-05031} tries to
     jointly learn user-item latent representations as well as the prediction depending on the interactions between
-    different users and items. The network's inputs are indices of users and items. Firstly, an embedding layer maps
-    each user and each item to its corresponding latent vector representation. Output of the embedding layers is then
-    concatenated and passed on through fully connected feedforward layers with ReLU activation functions. Finally,
-    output of the network represents the rating associated with the inputted user and item. Network is trained minimizing
+    different users and items.
+    The network's inputs are indices of users and items.
+    Firstly, an embedding layer maps each user and each item to its corresponding latent vector representation.
+    Output of the embedding layers is then concatenated and passed on through fully connected feedforward layers with ReLU activation functions.
+    Finally, output of the network represents the rating associated with the inputted user and item. Network is trained minimizing
     the mean squared error loss between the predicted and target rating.
 
     \subsubsection{Autoencoder}
