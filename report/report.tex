@@ -180,34 +180,36 @@
         \label{fig:movie_category_distribution}
     \end{figure}
 
-    With these additional user/item features, we append to our feature vector $\mathbf{x}_{ui}$ a dense vector of user similarities from user $u$ to every other user, or the item feature which is either the one-hot-encoded cluster of item $i$ or a dense vector of Euclidean/Mahalanobis distances from item $i$ to every other item.
-
-    Finally, the following \Cref{alg:algo1} shows our proposed procedure for creating additional features to run \textbf{BFM}
+    The following \Cref{alg:algo1} shows our proposed procedure for creating additional features to run \textbf{BFM}
 
     \begin{algorithm}
         \SetKwInOut{Input}{input}
         Initialize missing matrix value with FM\\
         \For{$k = 0...K$} {
-            Run SVD (rank=$k$)
-            $k_{opt}=argmin_{k, k_{opt}}$RMSE(SVD(rank=$k$))
+        Run SVD (rank=$k$)
+        $k_{opt}=argmin_{k, k_{opt}}$RMSE(SVD(rank=$k$))
         }
-        Movie embeddings= $\sqrt{\Sigma_{k_{opt}}}V_{k_{opt}}^T$\\
-        Perform K-Means(movie embeddings)\\
-        \For{$i = 0...numMovies$} {
+            Movie embeddings= $\sqrt{\Sigma_{k_{opt}}}V_{k_{opt}}^T$\\
+            Perform K-Means(movie embeddings)\\
+            \For{$i = 0...numMovies$} {
             \For{$j = 0...numMovies$} {
-                $D_{i,j} ^{Eucl} = \|embi - emb_j\|^2$
+            $D_{i,j} ^{Eucl} = \|embi - emb_j\|^2$
             }
-        }
-        \For{$i = 0...numMovies$} {
-            \For{$j = 0...numMovies$} {
+                }
+                \For{$i = 0...numMovies$} {
+                \For{$j = 0...numMovies$} {
                 $D_{i,j} ^{Mahal} = \sqrt{(emb_i-emb_j)^TCov^{-1}(emb_i-emb_j)}$
-            }
-        }
-        \caption{Proposed solution for collaborative filtering}
-        \label{alg:algo1}
+                }
+                    }
+                    \caption{Proposed solution for collaborative filtering}
+                    \label{alg:algo1}
     \end{algorithm}
 
-    %TODO write about ordered probtis
+    With these additional user/item features, we append to our feature vector $\mathbf{x}_{ui}$ a dense vector of user similarities from user $u$ to every other user, or the item feature which is either the one-hot-encoded cluster of item $i$ or a dense vector of Euclidean/Mahalanobis distances from item $i$ to every other item.
+
+    Finally, for our best model, we reformulated the task of predicting unobserved user/item pairs to a classification problem instead of a regression task where we calculate the expectation over the different class probabilities.
+
+
     \subsubsection{Iterative SVD}
     % maybe only have in results?
     % TODO: run from 1-10, 20-100
@@ -277,6 +279,8 @@
 
     %TODO importance of shuffeling
     %add info that we trained on whole dataset
+
+
     \subsection{Comparison to Baselines}
 
     You compare your novel algorithm to \emph{at least two baseline
