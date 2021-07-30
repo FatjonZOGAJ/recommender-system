@@ -44,3 +44,5 @@ Document code
 Refactor
 Write on how to run the experiments/generate the data
 move parameters into model classes
+write on how to reproduce best score
+create params in autorec

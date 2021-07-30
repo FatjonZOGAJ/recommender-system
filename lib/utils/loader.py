@@ -8,7 +8,7 @@ from lib.utils.config import config
 def read_data():
     data_directory = config.DATA_DIR
     data_pd = pd.read_csv(f'{data_directory}/data_train.csv')
-    movies, users, predictions = extract_users_items_predictions(data_pd)  # TODO: can be rewritten
+    movies, users, predictions = extract_users_items_predictions(data_pd)
     data_pd['users'], data_pd['movies'] = users, movies
     print(data_pd.head(5))
     print()
