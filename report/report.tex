@@ -68,21 +68,21 @@
     \subsection{Standard Matrix Factorization based Approaches}
 
     \subsubsection{Singular Value Decomposition}
-    
-    Singular Value Decomposition is a matrix factorization technique that decomposes the original matrix $A \in {\rm I\!R}^{m*n} $ into the form $ A = U \Sigma V $ where U  $U \in {\rm I\!R}^{m*m}$,  $V  \in {\rm I\!R}^{m*n}$ are orthogonal matrices and $\Sigma \in {\rm I\!R}^{m*n}$ is a diagonal matrix whose entries are called singular values.   
-    
-    To apply SVD for Collaborative filtering we assume there exists a latent feature vector for each individual user and movie, so that the rating can be determined by taking the inner product between the feature vectors for the corresponding user and movie. Since the matrix is sparse, we initialize the missing values as mentioned in section A, and apply SVD to obtain the latent feature vectors from the columns of the matrices U and V \cite{svd}. 
-    
+
+    Singular Value Decomposition is a matrix factorization technique that decomposes the original matrix $A \in {\rm I\!R}^{m*n} $ into the form $ A = U \Sigma V $ where U  $U \in {\rm I\!R}^{m*m}$,  $V  \in {\rm I\!R}^{m*n}$ are orthogonal matrices and $\Sigma \in {\rm I\!R}^{m*n}$ is a diagonal matrix whose entries are called singular values.
+
+    To apply SVD for Collaborative filtering we assume there exists a latent feature vector for each individual user and movie, so that the rating can be determined by taking the inner product between the feature vectors for the corresponding user and movie. Since the matrix is sparse, we initialize the missing values as mentioned in section A, and apply SVD to obtain the latent feature vectors from the columns of the matrices U and V \cite{svd}.
+
     Since low-rank approximations can be more generalizable, we usually only keep the k best feature vectors for both users and movies associated with the k largest singular values, which is guaranteed to give the best approximation out of all k-rank matrices \cite{Eckart1936}.
-    
+
     The downside of this approach is that SVD is highly sensitive to initialization of the imputed values, whereas the benefits are that SVD always exists, is easy to compute and is readily available when using standard libraries in Python such as Numpy.
 
     \subsubsection{Non-Negative Matrix Factorization}
-    
+
     Since the ratings in the matrix are nonnegative, another feasible approach is to consider Non-Negative Matrix Factorization, which decomposes our original matrix as $A = WH$, where W and H are both nonnegative \cite{gillis2014nonnegative}. Commonly, it achieves this by optimizing over the Frobenius norm between the difference of the observed entries of the approximation and the original matrix:
-    
+
     $$ \frac{1}{2}\|\Pi_{\Omega}(A - WH)\|^2_F$$
-    
+
     Although this optimization problem is NP-hard, in practice we can obtain good solutions by leveraging the separability of parameters that depend on U and V respectively, for example by using the Alternating Least Squares algorithm \cite{als}.
 
     \subsubsection{Bayesian Factorization Machines}
@@ -214,83 +214,61 @@
     acts as regularization.
     As such, their item-based autoencoder is able to reduce complexity at inference time while improving performance compared to similar models.\cite{pmlr-v80-muller18a}
 
-    \subsubsection{Iterative SVD}
-    % maybe only have in results?
-    % TODO: run from 1-10, 20-100
-
 
     \section{Results}
     We present our results in \Cref{tab:ablation}, noting the Root Mean Squared Error \textbf{(RMSE)} of our baselines and final model.
-    Test scores refer to the public leaderboard ranking while validation scores refer to a 10\% holdout of our training data.
-    Models without test scores were just added for completeness as the performance was not satisfactory or other models evaluated in the meantime performed better.
-    Some other models may only show test scores if they were directly evaluated on the test data to eliminate
-    fitting the model multiple times.
+    Test scores refer to the public leaderboard ranking on Kaggle while validation scores refer to a 10\% holdout of our training data.
+    Here, it is important to note that test scores reported for standard matrix factorization models where obtained by training on the whole data.
+    Furthermore, models without test scores were just added for sake of completeness as the performance was either not satisfactory or other models evaluated in the meantime performed better.
+    On the other hand, other models may only show test scores as they were directly evaluated on the test data to eliminate the need of
+    fitting it a second time.
 
-    All mentioned scores are after clipping the outputs to a range between 1 and 5 or, if stated otherwise, rounded to the closest quarter.
-    However, using more sophisticated postprocessing techniques like rounding to integers or to quarters always resulted in worse performance.
+    All scores are reported after clipping the outputs to a range between 1 and 5 or, if stated otherwise, rounded to the closest quarter.
 
-    Looking at \Cref{fig:rank} we see that except for NMF, which achieves the lowest score with rank 24, the other models perform best with a rank of around 10.
+    Our first baseline, SVD with rank 3, heavily depends on the initialization of unobserved values, achieving a test score of 0.9928 when replacing values with the item mean and only 1.0713 when using the overall mean.
+    This illustrates that using the item mean over other variants seems superior and based on this, we further experimented with more sophisticated initialization techniques such as using other models to predict unobserved values.
+    In \Cref{tab:ablation}, for instance, \textit{SVD*10} stands for chaining SVD ten times after another where after each round we reset the observed entries back to their original values.
+    With this we were able to get a test score of 0.9882 which is a large improvement for SVD.
+    Similar to this, \textit{SVD + KernelNet} first trains the KernelNet and then predicts the unobserved values such that they can be used to initialize SVD.
+    This further decreased the error to 0.9803 which is the best score we achieved using SVD.
+    Similar to the SVD, our second baseline, NMF, performs best when replacing missing values with the item mean and then chaining 10 NMF models which results in a validation score of 0.9946.
+
+    Looking at \Cref{fig:rank}, we see that except for NMF, which achieves the lowest error with rank 24, the other standard matrix factorization models perform best with a lower rank approximation of around 10.
     \begin{figure}
         \includegraphics[width=\columnwidth]{figures/rank.png}
-        \caption{Validation RMSE for different rank values.
-        NMF performs best with a rank of 24 while the others do best with 8 - 12.}
+        \caption{Validation RMSE for different rank values when trained on a 90/10 train/test split.
+        NMF performs best with a rank of 24 while others peak around 8 to 12.}
         \label{fig:rank}
     \end{figure}
 
+    Next, we evaluate neural network based approaches.
+    Starting with standard autoencoder, we found that, when both the encoder and the decoder consist of a single hidden layer, increasing the width resulted in a better score.
+    Furthermore, we have examined the effect of compositionality by using two layers which drastically outperformed any single layer network, obtaining a score of 1.0539 after 250 epochs.
+    NCF, our fourth baseline, already surpasses this performance only after 10 epochs, achieving its best score of 0.9787 after epoch 250.
+    Compared to that is the AutoRec which achieved an RMSE of 1.0100 after only 5 epochs after which the error increased.
+    Regarding the KernelNet, replacing the unobserved values with zeros surprisingly fared best which is in contradiction to the insights gained from SVD, leading to a much worse validation error of 1.0409 as opposed to 0.9831 when running it for 150 iterations.
 
-    Our first baseline, SVD, heavily depends on the initialization of unobserved values, achieving a test score of 0.9928 when replacing values with the item mean and only 1.0713 when using the overall mean (both rank 3).
-    Due to this, we further experimented with using other models to predict the unobserved values.
-    In \Cref{tab:ablation} SVD*10 stands for chaining 10 SVDs after another.
-    With this we were able to get a test score of 0.9882 which is a large improvement.
-
-    SVD + KernelNet first trains the KernelNet and then predicts the unobserved values so that they can be used as input for the SVD.
-    This achieved a validation score of 0.9803 which increases to 0.9838 when chaining another 4 SVDs onto it.
-    Utilizing our best BFM SVD++ f. (rank 12) in combination with 5 SVDs (rank 3) achieves the lowest SVD test score of 0.9846.
-
-    Similar to the SVD, the NMF performs best (validation score of 0.9946) when replacing missing values with the item mean and then chaining 10 NMF models.
-
-    We found that when both encoder and decoder in Autoencoder consist of one layer increasing the encoded dimension up to 500 makes
-    the score better.
-    Furthermore, we have examined the effect of compositionality.
-    Using only two layers in encoder and decoder already performs better than any single layer Autoencoder getting a score of 1.0539 after 250 epochs.
-    The AutoRec got an RMSE score of 1.0100 after only 5 epochs after which it gets worse.
-    NCF after 10 epochs leads to a validation score of 1.0004, achieving its best of 0.9787 only after epoch 250.
-    For our last Autoencoder, KernelNet, replacing the unobserved values with 0 surprisingly fared best.
-    Using item mean like with SVDs leads to a much worse validation score of 1.0409 as opposed to 0.9831 when running it for 150 iterations.
-    Similarly, running it for more than 150 iterations leads to a marginal decrease in score.
-
-    From  \Cref{fig:validation} it is visible that overall the KernelNet performed best and Autoencoder made continuous progress, while AutoRec and NCF quickly started to overfit.
+    From \Cref{fig:validation} it is visible that overall the KernelNet performed best, the Autoencoder made continuous progress, while AutoRec and NCF quickly started to diverge.
 
     \begin{figure}
         \includegraphics[width=\columnwidth]{figures/validation_plot.png}
-        \caption{Validation RMSE for different epochs.
-        AutoRec and NCF overfit after a few epochs while KernelNet and AutoEncoder show oppositve behaviour.}
+        \caption{Validation RMSE for different epochs when trained on a 90/10 train/test split.
+        AutoRec and NCF started to diverge after a few epochs while KernelNet and AutoEncoder show the opposite behaviour.}
         \label{fig:validation}
     \end{figure}
 
-
     Regarding our final baseline, we obtained similar overall results for BFM as stated in "On the Difficulty of Evaluating Baselines" \cite{rendle_difficulty_2019}.
-    As can be seen in \Cref{tab:ablation}, BFM with implicit user and movie features performed best while standard BFM and BFM with only implicit user features performed worse.
+    As can be seen in \Cref{tab:ablation}, BFM with implicit user and movie features performed better while standard BFM and BFM with only implicit user features performed worse.
     Furthermore, adding additional features for users and movies resulted in similar performance compared to the BFM SVD++ flipped model for almost all of our proposed features.
-    However, we noticed that the distance metrics performed worse when compared to the genre clustering hinting that with some fine-tuning of the cluster sizes, better results might be achievable.
-    Compared to that, the introduction of the Jaccard index to resemble some connection between users performed similarly as well whereas the improved version of it actually decreased the performance.
+    However, we noticed that the distance metrics performed worse when compared to the genre clustering, hinting that with some fine-tuning of the cluster sizes, better results might be achievable.
+    Compared to that, the introduction of the Jaccard index to resemble connections between users performed similarly as well whereas the improved version of it surprisingly decreased the performance.
     An additional experiment that we conducted, was the idea to initialize SVD with the output of a BFM SVD++ flipped predictor and perform SVD iteratively multiple times.
-    While this approach is unsurprisingly the best predictor for SVD due to its much better unobserved value initialization, it did not perform the overall best baseline.
-    As a final approach, we reformulated the problem of predicting user/movie ratings from a regression problem into a classification one.
-    This yielded a slight improvement which we could further decrease by using a lower rank approximation, namely 12 instead of 32.
-    This might be due to the fact users tend to overall rate movies rather positive than negative for which we assume that this phenomenon can be better captured by formulating the problem of predicting user/movie ratings as a classification task.
+    While this approach unsurprisingly performs well in regards to the better initialization of unobserved values in SVD, it did not improve upon the BFM variant.
+    As a final approach, we reformulated the problem of predicting user/movie ratings from a regression problem into a classification one which yielded a slight performance gain.
 
     A general overview of low rank matrix approximation techniques can be observed in \Cref{fig:rank}.
-    Here, we varied the amount of singular values to keep and reported the mean RMSE of a 3-fold cross validation.
-
-    \subsection{Comparison to Baselines}
-    % TODO: specifically compare best BFM model to the results of the best others, but have the details regarding the model in the description
-
-    You compare your novel algorithm to \emph{at least two baseline
-    algorithms}. For the baselines, you can use the implementations you
-    developed as part of the programming assignments.
-
-
+    Here, we varied the amount of singular values to keep and reported the average performance of 3-fold cross validation.
+    Furthermore, the heatmap, illustrated in \Cref{fig:Heatmap}, gives an overview on the conducted parameter search of sampling size per iteration and ranks.
 
     \begin{table}
         \centering
@@ -302,12 +280,12 @@
             SVD                  & Rank 3                                & total mean              & 1.0713                 &                         \\
             SVD                  & Rank 3                                & user mean               & 1.0558                 &                         \\
             SVD                  & Rank 3                                & item mean               & 1.0138                 &                         \\
-            SVD*4                & Rank 3                                & item mean               & 0.9928                 & 0.9893                  \\
-            SVD*7                & Rank 3                                & item mean               & 0.9894                 &                         \\
-            SVD*10               & Rank 3                                & item mean               & 0.9882                 & 0.9854                  \\
-            SVD*10               & Rank 3, Round Quarters                & item mean               & 0.9907                 &                         \\
-            SVD*10               & Rank 10                               & item mean               & 0.9941                 &                         \\
-            SVD + KernelNet      & Rank 10 |150 Epochs                   & zero                    &                        & 0.9803                  \\
+            4*SVD                & Rank 3                                & item mean               & 0.9928                 & 0.9893                  \\
+            7*SVD                & Rank 3                                & item mean               & 0.9894                 &                         \\
+            10*SVD               & Rank 3                                & item mean               & 0.9882                 & 0.9854                  \\
+            10*SVD               & Rank 3, Round Quarters                & item mean               & 0.9907                 &                         \\
+            10*SVD               & Rank 10                               & item mean               & 0.9941                 &                         \\
+            SVD + KernelNet      & Rank 10 | 150 Epochs                   & zero                    &                        & 0.9803                  \\
             5*SVD + KernelNet    & Rank 10 | 150 Epochs                  & zero                    &                        & 0.9838                  \\
             5*SVD + KernelNet    & Rank 3 | 150 Epochs                   & zero                    &                        & 0.9844                  \\
             5*SVD + BFM SVD++ f. & Rank 3 | Rank 12                      & /                       & 0.9846                 &                         \\
@@ -347,17 +325,15 @@
             \hline
         \end{tabular}
         }
-        \caption{We note Root Mean Squared Error (RMSE) on test and validation datasets to compare our baselines.
-        Arithmetic in models such as $x * 4$ or $x + y$ refers to the iterative chaining of multiple models for the initialization of missing values.
-        }
+        \caption{We note the Root Mean Squared Error (RMSE) on test and validation datasets to compare our baselines to our novelties.}
         \label{tab:ablation}
     \end{table}
 
 
     \begin{figure}
         \includegraphics[width=\columnwidth]{figures/heatmap.png}
-        \caption{Validation RMSE for different values of sample size and rank produced by grid search on our best BFM model.
-        Ranks of 8 - 12 in combination with higher sample sizes perform best.}
+        \caption{Validation RMSE for different values of sample size and rank when trained on a 90/10 train/test split. Note that this parameter search has been conducted on our second best model due to the high computational burden of our best model.
+        A low-rank approximation of 8 to 12 with the highest sampling size performs best.}
         \label{fig:Heatmap}
     \end{figure}
 
@@ -367,10 +343,15 @@
     We assume that this is mainly based on the statistical learning theory fact that one cannot gain additional information out of existing data.
     Although, the genre clustering as well as the standard Jaccard index did not perform much worse than the standard baselines, we conclude that hand-crafting features for collaborative filtering is not a direction worth exploring.
 
+    However, using more sophisticated postprocessing techniques like rounding to integers or to quarters always resulted in worse performance.
     % TODO primarily BMF
 
+    This might be due to the fact users tend to overall rate movies rather positive than negative for which we assume that this phenomenon can be better captured by formulating the problem of predicting user/movie ratings as a classification task.
     %TODO importance of shuffeling
     %add info that we trained on whole dataset
+
+
+    higher sampling size is better, rank of 12 seems to be optimal but not for classification.
 
 
     \section{Summary}
