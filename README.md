@@ -66,15 +66,3 @@ To build the report, simply call:
 
     bash build-paper.sh 
 
-# TODOS
-
-Sign plagiarism form 
-
-Submit final submission on kaggle
-
-Start iterative approach experiment
-
-Write ensemble Document code
-
-Write on how to run the experiments/generate the data write on how to reproduce best score
-create params in autorec
