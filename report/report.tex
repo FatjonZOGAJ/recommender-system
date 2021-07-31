@@ -19,6 +19,11 @@
 \DeclareMathOperator*{\argmin}{argmin}   % Jan Hlavacek
 
 \newcommand{\spacing}{\hspace{1cm}}
+
+\usepackage{xcolor}
+\newcommand{\todo}[1]{\textcolor{red}{#1}}
+%\newcommand{\todo}[1]{{\color{red}{#1}}}
+
 \begin{document}
     \title{On Bayesian Factorization Machines in Collaborative Filtering}
 
@@ -43,7 +48,7 @@
     This data usually consists of user/item pairs and its corresponding rating which is normally presented in form of a real-valued sparse matrix.
     This sparseness stems from the majority of user/item pairs being unavailable.
 
-    In this project we are concerned with completing such a sparse matrix in the setting of movie recommendation systems, a problem for which benchmarks such as the Netflix Prize \cite{Netflix} and the different versions of MovieLens \cite{Movielens} are already well-established.
+    In this project we are concerned with completing such a sparse matrix in the setting of movie recommendation systems, a problem for which benchmarks such as the Netflix Prize~\cite{Netflix} and the different versions of MovieLens~\cite{Movielens} are already well-established.
     As such, we viewed these benchmarks as guidelines to select 7 state-of-the-art models allowing for a rigorous evaluation of our final results.
 
     Among these baselines, we selected standard techniques, mainly based on matrix factorization.
@@ -175,41 +180,45 @@
     \subsection{Neural Network based Approaches}
 
     \subsubsection{Neural Collaborative Filtering (NCF)}
-    Neural Collaborative Filtering as proposed by He et al.~\cite{DBLP:journals/corr/abs-1708-05031} tries to
-    jointly learn user-item latent representations as well as the prediction depending on the interactions between
+    Neural Collaborative Filtering as proposed by He et al.~\cite{DBLP:journals/corr/abs-1708-05031}
+    jointly learns user-item latent representations and predictions based on the interactions between
     different users and items.
-    The network's inputs are indices of users and items.
-    Firstly, an embedding layer maps each user and each item to its corresponding latent vector representation.
-    Output of the embedding layers is then concatenated and passed on through fully connected feedforward layers with ReLU activation functions.
-    Finally, output of the network represents the rating associated with the inputted user and item. Network is trained minimizing
-    the mean squared error loss between the predicted and target rating.
+%    The network's inputs are indices of users and items.
+    An embedding layer maps each user and each item to its corresponding latent vector representation.
+    This output is then concatenated \todo{onto what?} and passed on through fully connected feedforward layers with ReLU activation functions to form the predictions.
+    We train the model by minimizing the mean squared error loss.
+%    Finally, output of the network represents the rating associated with the inputted user and item.
+%    We use the mean squared error loss between the output of  and target rating.
+%    Network is trained minimizing the mean squared error loss between the predicted and target rating.
 
-    \subsubsection{Autoencoder}
-    An autoencoder is a neural network that is trained to attempt to copy its input to its output.
-    The network may be viewed as consisting of two parts: an encoder function $f: \mathbb{R} ^d \rightarrow \mathbb{R} ^k$ and a
-    decoder that produces a reconstruction $g: \mathbb{R} ^k \rightarrow \mathbb{R} ^d$ \cite{Goodfellow-et-al-2016}.
-    Autoencoders have proven to achieve good results in collaborative filtering \cite{inproceedings}.
-    We examine the user-based autoencoder as opposed to item-based autoencoder which achieved a good score in \cite{inproceedings}.
+    \subsubsection{Autoencoder (AE)}
+    An AE is a neural network consisting of an encoder $f: \mathbb{R} ^d \rightarrow \mathbb{R} ^k$ and a
+    decoder that produces a reconstruction $g: \mathbb{R} ^k \rightarrow \mathbb{R} ^d$~\cite{Goodfellow-et-al-2016}.
+    It is trained to recreate its input as its output $\hat{y} = g(f(x))$ \todo{is this y and x or smth else for AE?}.
+    Autoencoders have proven to achieve good results in collaborative filtering~\cite{inproceedings}.
+    We examine the user-based AE as opposed to item-based AE which achieved a good score in~\cite{inproceedings}.
     Both encoder and decoder consist of feedforward neural networks with ReLU activation functions.
     We train the model by minimizing the squared reconstruction loss.
-    Important part of the implementation is the fact that inputs are partially observed and therefore we only update those weights that are associated with observed inputs during backpropagation.
+%    Important part of the implementation is the fact that inputs are partially observed and therefore we only update those weights that are associated with observed inputs during backpropagation.
 
     \subsubsection{AutoRec}
-    Furthermore, we have run the AutoRec implementation \cite{inproceedings}, which achieved a state-of-the-art result.
-    Compared to our autoencoder implementation AutoRec is item-based, uses the sigmoid activation function as the final non-linearity and adds regularization to the loss function.
+    Based on the previous model, we have added the AutoRec implementation~\cite{inproceedings}, which achieved a state-of-the-art result.
+    Compared to our AE implementation AutoRec is item-based, uses the sigmoid activation function as the final non-linearity and adds regularization to the loss function.
 
     \subsubsection{Kernel Net}
-    We add the MovieLens-1M state of the art model (on papers with code) as another baseline as the given problem description fares very similarly to ours.
-    For this, we adapt the code from \cite{pmlr-v80-muller18a, kernelNetGithub} into our experiment framework.
+    We add the MovieLens-1M state of the art model (on papers with code\todo{add cite for this }),
+    for which we adapt the code from~\cite{pmlr-v80-muller18a, kernelNetGithub} into our experiment framework.
+%    as another baseline as the given problem description fares very similarly to ours.
+%    For this, we adapt the code from~\cite{pmlr-v80-muller18a, kernelNetGithub} into our experiment framework.
 
-    The high sparsity in recommender-system datasets leads to the need and resulting variety of possibilities for dimensionality reduction.
-    Combined with the amount of parameters in neural networks this leads to large training times and possibly
-    unexpected results on unseen data due to overfitting.
+%    The high sparsity in recommender-system datasets leads to the need and resulting variety of possibilities for dimensionality reduction.
+%    Combined with the amount of parameters in neural networks this leads to large training times and possibly
+%    unexpected results on unseen data due to overfitting.
 
     Muller et al. make use of finite-support kernels to reparametrize weight matrices with low-dimensional vectors.
     This allows for the structured feature embedding of neural network weights based on the specific kernel function used and
     acts as regularization.
-    As such, their item-based autoencoder is able to reduce complexity at inference time while improving performance compared to similar models.\cite{pmlr-v80-muller18a}
+    As such, their item-based AE is able to reduce complexity at inference time while improving performance compared to similar models\cite{pmlr-v80-muller18a}.
 
 
     \section{Results}
@@ -239,18 +248,18 @@
     \end{figure}
 
     Next, we evaluate neural network based approaches.
-    Starting with standard autoencoder, we found that, when both the encoder and the decoder consist of a single hidden layer, increasing the width resulted in a better score.
+    Starting with standard AE, we found that, when both the encoder and the decoder consist of a single hidden layer, increasing the width resulted in a better score.
     Furthermore, we have examined the effect of compositionality by using two layers which drastically outperformed any single layer network, obtaining a score of 1.0539 after 250 epochs.
     NCF, our fourth baseline, already surpasses this performance only after 10 epochs, achieving its best score of 0.9787 after epoch 250.
     Compared to that is the AutoRec which achieved an RMSE of 1.0100 after only 5 epochs after which the error increased.
     Regarding the KernelNet, replacing the unobserved values with zeros surprisingly fared best which is in contradiction to the insights gained from SVD, leading to a much worse validation error of 1.0409 as opposed to 0.9831 when running it for 150 iterations.
 
-    From \Cref{fig:validation} it is visible that overall the KernelNet performed best, the Autoencoder made continuous progress, while AutoRec and NCF quickly started to diverge.
+    From \Cref{fig:validation} it is visible that overall the KernelNet performed best, the AE made continuous progress, while AutoRec and NCF quickly started to diverge.
 
     \begin{figure}
         \includegraphics[width=\columnwidth]{figures/validation_plot.png}
         \caption{Validation RMSE for different epochs when trained on a 90/10 train/test split.
-        AutoRec and NCF started to diverge after a few epochs while KernelNet and AutoEncoder show the opposite behaviour.}
+        AutoRec and NCF started to diverge after a few epochs while KernelNet and Autoencoder show the opposite behaviour.}
         \label{fig:validation}
     \end{figure}
 
@@ -292,9 +301,9 @@
                 NMF                  & Rank 24                               & item mean               &                        & 1.0029                  \\
                 NMF*10               & Rank 24                               & item mean               &                        & 0.9946                  \\
                 \hline
-                Autoencoder          & 50 Epochs                             & total mean              &                        & 1.3382                  \\
-                Autoencoder          & 150 Epochs                            & total mean              &                        & 1.0757                  \\
-                Autoencoder          & 250 Epochs                            & total mean              &                        & 1.0539                  \\
+                AE                   & 50 Epochs                             & total mean              &                        & 1.3382                  \\
+                AE                   & 150 Epochs                            & total mean              &                        & 1.0757                  \\
+                AE                   & 250 Epochs                            & total mean              &                        & 1.0539                  \\
                 \hline
                 NCF                  & 50 Epochs                             & /                       &                        & 0.9820                  \\
                 NCF                  & 150 Epochs                            & /                       &                        & 0.9789                  \\
