@@ -1,10 +1,10 @@
-from torch import optim
-from torch.utils.data import DataLoader, TensorDataset
-from lib.models.base_model import BaseModel
 import torch
 import torch.nn as nn
 from easydict import EasyDict as edict
+from torch import optim
+from torch.utils.data import DataLoader, TensorDataset
 
+from lib.models.base_model import BaseModel
 from lib.utils.utils import get_score
 
 params = edict()

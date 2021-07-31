@@ -2,22 +2,22 @@
 Adapted from https://github.com/tohtsky/myFM/blob/master/examples/ml-1m-extended.ipynb
 '''
 import os.path
+from collections import defaultdict
 
+import hickle as hkl
 import myfm
 import numpy as np
 import pandas as pd
-import hickle as hkl
-from tqdm import tqdm
 from easydict import EasyDict as edict
 from myfm import RelationBlock
 from scipy import sparse
-from collections import defaultdict
+from tqdm import tqdm
 
 from lib.models.base_model import BaseModel
 
 params = edict()
 params.FEATURES_PATH = 'data/features/'
-params.RANK = 12 # rank 12 is best
+params.RANK = 12  # rank 12 is best
 params.N_ITER = 512  # does not work if not enough iterations
 params.SAMPLES = None  # default is params.N_ITER - 5
 params.GROUPING = True

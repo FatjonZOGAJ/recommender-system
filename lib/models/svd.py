@@ -1,8 +1,8 @@
 import numpy as np
+from easydict import EasyDict as edict
 
 from lib.models.base_model import BaseModel
 from lib.utils.config import config
-from easydict import EasyDict as edict
 
 params = edict()
 params.RANK = 3

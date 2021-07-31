@@ -9,13 +9,14 @@ from pathlib import Path
 import numpy as np
 import torch
 from sklearn.metrics import mean_squared_error
+# disable TF 2.0 Deprecation notice
+from tensorflow.python.util import deprecation
 
 from lib.utils.config import config
 
-# disable TF 2.0 Deprecation notice
-from tensorflow.python.util import deprecation
 deprecation._PRINT_DEPRECATION_WARNINGS = False
 import tensorflow as tf
+
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 rmse = lambda x, y: math.sqrt(mean_squared_error(x, y))
@@ -57,6 +58,7 @@ def parse_args():
 
     return parser.parse_args()
 
+
 # adapted from https://gitlab.inf.ethz.ch/COURSE-MP2021/Terminators
 def create_logger(cfg, cfg_name, time_str=None, phase='train'):
     root_output_dir = Path(cfg.OUTPUT_DIR)
@@ -93,8 +95,10 @@ def reset_config(config, args, valid=False):
 def get_score(predictions, target_values):
     return rmse(predictions, target_values)
 
+
 def roundPartial(value, resolution):
     return np.round(value / float(resolution)) * resolution
+
 
 def get_index(test_movies, test_users):
     index = [''] * len(test_users)

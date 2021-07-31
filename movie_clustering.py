@@ -1,12 +1,14 @@
 import os
+
+import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.cluster import KMeans
+
 import lib.models as models
 from lib.utils import utils
 from lib.utils.config import config
-from lib.utils.loader import read_data, extract_users_items_predictions
+from lib.utils.loader import extract_users_items_predictions, read_data
 from movie_distances import get_embeddings
-from sklearn.cluster import KMeans
-import matplotlib.pyplot as plt
 
 
 def perform_kmeans(embeddings, embeddings_2d):
@@ -51,5 +53,3 @@ if __name__ == '__main__':
     rank18_labels = kmeans.labels_
     np.save('rank18_movie_categories.npy', rank18_labels)
     plot_histogram(rank18_labels, 18)
-
-

@@ -1,16 +1,16 @@
 import os
 
+import hickle as hkl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
 from lib.models import models
+from lib.models.autoencoder import AutoEncoder
 from lib.utils import utils
 from lib.utils.config import config
 from lib.utils.loader import extract_users_items_predictions, read_data
 from lib.utils.utils import get_score
-from lib.models.autoencoder import AutoEncoder
-import hickle as hkl
 
 
 def plot_deep_autoencoder(encoded_dimension, rmse, path):

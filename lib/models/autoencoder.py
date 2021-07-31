@@ -2,13 +2,11 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from easydict import EasyDict as edict
 from torch.utils.data import DataLoader, TensorDataset
 
 from lib.models.base_model import BaseModel
-from lib.utils.config import config
 from lib.utils.utils import get_score
-
-from easydict import EasyDict as edict
 
 params = edict()
 params.ENCODED_DIMENSION = 250
