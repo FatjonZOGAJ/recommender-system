@@ -31,5 +31,3 @@ def extract_users_items_predictions(data_pd):
     predictions = data_pd.Prediction.values
     # index for users and movies starts at 0
     return users, movies, predictions
-
-

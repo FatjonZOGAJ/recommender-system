@@ -1,8 +1,8 @@
+from easydict import EasyDict as edict
 from sklearn.decomposition import non_negative_factorization
 
 from lib.models.base_model import BaseModel
 from lib.utils.config import config
-from easydict import EasyDict as edict
 
 params = edict()
 params.RANK = 24

@@ -1,18 +1,14 @@
-import json
-
-import numpy as np
+import hickle as hkl
 import pandas as pd
-
-import lib.models as models
-from lib.utils import utils
-from lib.utils.config import config
-from lib.utils.loader import extract_users_items_predictions, read_data
+from sklearn.metrics import make_scorer, mean_squared_error
 from sklearn.model_selection import GridSearchCV
+
 from lib.models.fm import BFM
 from lib.models.nmf import NMF
 from lib.models.svd import SVD
-import hickle as hkl
-from sklearn.metrics import mean_squared_error, make_scorer
+from lib.utils import utils
+from lib.utils.config import config
+from lib.utils.loader import extract_users_items_predictions, read_data
 
 
 def main():

@@ -1,11 +1,12 @@
 import os
 
+import numpy as np
+from scipy.spatial import distance
+
 import lib.models as models
 from lib.utils import utils
 from lib.utils.config import config
-from lib.utils.loader import read_data, extract_users_items_predictions
-import numpy as np
-from scipy.spatial import distance
+from lib.utils.loader import extract_users_items_predictions, read_data
 
 
 def get_embeddings(data, rank=10):

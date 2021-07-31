@@ -21,6 +21,7 @@ config.MODEL = 'fm'
 # either one of the models, 'zero', 'mean','item_mean' or 'user_mean'
 config.DEFAULT_VALUES = [*np.repeat('svd', 4), 'kernel_net', 'zero']
 
+
 # following adapted from https://gitlab.inf.ethz.ch/COURSE-MP2021/Terminators
 
 # saving config file
