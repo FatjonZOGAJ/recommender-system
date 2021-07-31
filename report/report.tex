@@ -33,14 +33,20 @@
     \title{On Bayesian Factorization Machines in Collaborative Filtering}
 
     \author{
-    Rafael Sterzinger \spacing Patrik Okanovic \spacing Fatjon Zogaj \spacing Filip Batur Stipic\\
-    Group: Terminators\\
-    Department of Computer Science, ETH Zurich, Switzerland
+        Rafael Sterzinger \spacing Patrik Okanovic \spacing Fatjon Zogaj \spacing Filip Batur Stipic\\
+        Group: Terminators\\
+        Department of Computer Science, ETH Zurich, Switzerland
     }
 
     \maketitle
 
     \begin{abstract}
+        Collaborative Filtering offers promising results for the task of Recommender Systems.
+        In this work we compare several neural-based and standard matrix factorization methods, placing our focus on Bayesian Factorization Machines.
+        We build upon Bayesian Factorization Machines by including implicit user/item information, distance similarities and genre clustering and report results in an extensive benchmark.
+
+    \end{abstract}
+ \begin{abstract}
         Nowadays, collaborative filtering methods for recommender systems find there application in a variety of areas.
         In this work we consider several neural-based and standard matrix-factorization-based models, focusing on Bayesian Factorization Machines and its variants.
         We extended these variants by adding additional features which act as an alternative to usually explicit provided ones.
@@ -358,7 +364,9 @@
 
     \section{Summary}
 
-    In this paper we have examined the problem of collaborative filtering using a variety of models, such as SVD, NCF, KernelNet, NMF and autencoder networks. We exploit the Bayesian Factorization Machines improving the score of the selected baselines. Furthermore, we have enhanced Bayesian Factorization Machines with additional features that represent "movie genre" and "friend of an user" information making it more accessible and explicit.
+    In this paper we have examined the problem of collaborative filtering, analyzing a variety of models, such as SVD, NMF, NCF, KernelNet, and AE networks.
+    We explore variants of Bayesian Factorization Machines, improving upon the score of the selected baselines.
+    We extend BFMs with additional features that represent movie genre, similarities between movies/users and implicit friend of a user information making it more accessible and explicit.
 
 
 
