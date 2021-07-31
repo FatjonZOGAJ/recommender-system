@@ -41,17 +41,9 @@
     \maketitle
 
     \begin{abstract}
-        Collaborative Filtering offers promising results for the task of Recommender Systems.
-        In this work we compare several neural-based and standard matrix factorization methods, placing our focus on Bayesian Factorization Machines.
-        We build upon Bayesian Factorization Machines by including implicit user/item information, distance similarities and genre clustering and report results in an extensive benchmark.
-
-    \end{abstract}
- \begin{abstract}
-        Nowadays, collaborative filtering methods for recommender systems find there application in a variety of areas.
-        In this work we consider several neural-based and standard matrix-factorization-based models, focusing on Bayesian Factorization Machines and its variants.
-        We extended these variants by adding additional features which act as an alternative to usually explicit provided ones.
-        Among those are multiply user similarity measures, item distance metrics and unsupervised-learned clusters with the idea to resemble a "friends of a user" or an "item genre" feature.
-        In the case that only user/item pairs and corresponding ratings exist and such features were not provided explicitly, these features might turn out to be beneficial.
+        Nowadays, collaborative filtering methods for recommender systems find there application in a wide variety of areas.
+        In this work we consider several neural-based and standard matrix-factorization-based models, placing our focusing on Bayesian Factorization Machines and its variants.
+        We extended these variants by adding additional features such as implicit user/item information, multiple user similarity measures, item distance metrics, and unsupervised-learned clusters and report results in an extensive benchmark.
     \end{abstract}
 
 
@@ -296,6 +288,7 @@
             SVD + KernelNet      & Rank 10 | 150 Epochs                  & zero                    & 0.9836                 & 0.9803                  \\
             5*SVD + BFM SVD++ f. & Rank 3 | Rank 12                      & /                       & 0.9846                 &                         \\
             5*SVD + BFM SVD++ f. & Rank 10 | Rank 12                     & /                       & 0.9789                 &                         \\
+            SVD + BFM SVD++ f.   & Rank 10 | Rank 12                     & /                       & 0.9710                 &                         \\
             \hline
             NMF                  & Rank 24                               & total mean              &                        & 1.0628                  \\
             NMF                  & Rank 24                               & user mean               &                        & 1.0497                  \\
