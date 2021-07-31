@@ -111,9 +111,9 @@
     This Bayesian approach does not only increase accuracy but also omits the need of exhaustive parameter tuning~\cite{freudenthaler_bayesian_2011}.
     Regarding the implementation of our baseline, we utilize a package named \textit{myFM}~\cite{noauthor_myfm_nodate} which employs Gibbs sampling for approximate inference of the posterior.
     Multiple additions have been made by means of exploiting additional implicit information about users, items, and temporal dynamics~\cite{rendle_scaling_2013,koren_factorization_2008,koren_collaborative_2009}.
-    We incorporate the majority of these, omittting temporal dynamics due to the absence of this information in our provided dataset.
+%    We incorporate the majority of these, omitting temporal dynamics due to the absence of this information in our provided dataset.
 %    In our implementation, we incorporated most of these as well, omitting temporal dynamics due to the absence of this information in our provided dataset.
-    The two additional features are defined as follows:
+    The two implicit features we add are defined as follows:
     \begin{enumerate}
         \item Implicit User Feature (Bayesian SVD++) $\Leftrightarrow$ all items rated by user $u$:
         $$\mathbf{V}_u=\frac{\Omega_u}{\sqrt{|\{(u,i): (u,i) \in \Omega_u\}|}}$$
@@ -185,7 +185,7 @@
     different users and items.
 %    The network's inputs are indices of users and items.
     An embedding layer maps each user and each item to its corresponding latent vector representation.
-    This output is then concatenated \todo{onto what?} and passed on through fully connected feedforward layers with ReLU activation functions to form the predictions.
+    These outputs are then concatenated and passed on through fully connected feedforward layers with ReLU activation functions to form the predictions.
     We train the model by minimizing the mean squared error loss.
 %    Finally, output of the network represents the rating associated with the inputted user and item.
 %    We use the mean squared error loss between the output of  and target rating.
@@ -194,7 +194,7 @@
     \subsubsection{Autoencoder (AE)}
     An AE is a neural network consisting of an encoder $f: \mathbb{R} ^d \rightarrow \mathbb{R} ^k$ and a
     decoder that produces a reconstruction $g: \mathbb{R} ^k \rightarrow \mathbb{R} ^d$~\cite{Goodfellow-et-al-2016}.
-    It is trained to recreate its input as its output $\hat{y} = g(f(x))$ \todo{is this y and x or smth else for AE?}.
+    It is trained to recreate its input as its output $\mathbf{ \hat{x} } = g(f(\mathbf{x}))$.
     Autoencoders have proven to achieve good results in collaborative filtering~\cite{inproceedings}.
     We examine the user-based AE as opposed to item-based AE which achieved a good score in~\cite{inproceedings}.
     Both encoder and decoder consist of feedforward neural networks with ReLU activation functions.
@@ -222,23 +222,33 @@
 
 
     \section{Results}
-    We present our results in \Cref{tab:ablation}, noting the Root Mean Squared Error \textbf{(RMSE)} of our baselines and final model.
+    We present our results in \Cref{tab:ablation}, noting the Root Mean Squared Error (RMSE) of our baselines and final model.
     Test scores refer to the public leaderboard ranking on Kaggle while validation scores refer to a 10\% holdout of our training data.
-    Here, it is important to note that test scores reported for standard matrix factorization models where obtained by training on the whole data.
-    Furthermore, models without test scores were just added for sake of completeness as the performance was either not satisfactory or other models evaluated in the meantime performed better.
-    On the other hand, other models may only show test scores as they were directly evaluated on the test data to eliminate the need of
-    fitting it a second time.
+    \todo{isn't this clear}Here, it is important to note that test scores reported for standard matrix factorization models where obtained by training on the whole data.
+    Models without test scores are added for the sake of completeness and not evaluated further as the performance was either not satisfactory or other models evaluated in the meantime performed better.
+    Other models may only show test scores as they were directly evaluated on the test data to eliminate the need of
+    fitting a second time.
 
-    All scores are reported after clipping the outputs to a range between 1 and 5 or, if stated otherwise, rounded to the closest quarter.
+    All scores are reported after clipping the outputs to a range between 1 and 5 unless stated otherwise.% or, if stated otherwise, rounded to the closest quarter.
 
     Our first baseline, SVD with rank 3, heavily depends on the initialization of unobserved values, achieving a test score of 0.9928 when replacing values with the item mean and only 1.0713 when using the overall mean.
-    This illustrates that using the item mean over other variants seems superior and based on this, we further experimented with more sophisticated initialization techniques such as using other models to predict unobserved values.
-    In \Cref{tab:ablation}, for instance, \textit{SVD*10} stands for chaining SVD ten times after another where after each round we reset the observed entries back to their original values.
+%    This illustrates that using the item mean over other variants seems superior and based on this,
+    Due to this large discrepancy, we further experimented with more sophisticated initialization techniques such as using other models to predict unobserved values.
+    In \Cref{tab:ablation}, \textit{10*SVD} stands for chaining SVD ten times one after another to iteratively predict unobserved values (leaving the observed values as is) for the input of the following.
+%    where after each round we reset the observed entries back to their original values.
     With this we were able to get a test score of 0.9882 which is a large improvement for SVD.
-    Similar to this, \textit{SVD + KernelNet} first trains the KernelNet and then predicts the unobserved values such that they can be used to initialize SVD.
-    This further decreased the error to 0.9803 which is the best score we achieved using SVD.
+    Similar to this, \textit{SVD + KernelNet} first trains the KernelNet and then predicts the unobserved values such that they can be used to initialize the SVD.
+    This further decreased the error to 0.9836 which is the best test score we achieved using SVD.
+%    An additional experiment that we conducted, was the idea to initialize SVD with the output of a BFM SVD++ flipped predictor and perform SVD iteratively multiple times.
+    Using our best final BFM model chained with \textit{5*SVD} we achieve a test error of 0.9846.
+    \todo{Rafi results, change above Kernel Sentence if better than that}
+
+%    While this approach unsurprisingly performs well in regards to the better initialization of unobserved values in SVD, it did not improve upon the BFM variant.
+
+
     Similar to the SVD, our second baseline, NMF, performs best when replacing missing values with the item mean and then chaining 10 NMF models which results in a validation score of 0.9946.
 
+    We varied the amount of singular values to keep and reported the average performance of 3-fold cross validation.
     Looking at \Cref{fig:rank}, we see that except for NMF, which achieves the lowest error with rank 24, the other standard matrix factorization models perform best with a lower rank approximation of around 10.
     \begin{figure}
         \includegraphics[width=\columnwidth]{figures/rank.png}
@@ -249,12 +259,13 @@
 
     Next, we evaluate neural network based approaches.
     Starting with standard AE, we found that, when both the encoder and the decoder consist of a single hidden layer, increasing the width resulted in a better score.
-    Furthermore, we have examined the effect of compositionality by using two layers which drastically outperformed any single layer network, obtaining a score of 1.0539 after 250 epochs.
-    NCF, our fourth baseline, already surpasses this performance only after 10 epochs, achieving its best score of 0.9787 after epoch 250.
-    Compared to that is the AutoRec which achieved an RMSE of 1.0100 after only 5 epochs after which the error increased.
-    Regarding the KernelNet, replacing the unobserved values with zeros surprisingly fared best which is in contradiction to the insights gained from SVD, leading to a much worse validation error of 1.0409 as opposed to 0.9831 when running it for 150 iterations.
+    Furthermore, we have examined the effect of compositionality by using two layers which outperformed any single layer network, obtaining a validation score of 1.0539 after 250 epochs.
+    \todo{Patrik Check epochs of table and figure as well as result.}
+    NCF, our fourth baseline, already surpasses this performance only after 10 epochs and achieves its best score of 0.9787 after epoch 250.
+    Compared to that is the AutoRec which achieved an RMSE of 1.0100 after only 5 epochs after which the error steadily increased.
+    Regarding the KernelNet, replacing the unobserved values with zeros instead of item mean surprisingly fared best which is in contradiction to the insights gained from SVD, leading to a much better validation error of 0.9831 as opposed to 1.0409 (both 150 iterations).
 
-    From \Cref{fig:validation} it is visible that overall the KernelNet performed best, the AE made continuous progress, while AutoRec and NCF quickly started to diverge.
+    From \Cref{fig:validation} it can be observed that overall the KernelNet performed best, the AE made continuous progress, while AutoRec and NCF quickly started to overfit and diverge.
 
     \begin{figure}
         \includegraphics[width=\columnwidth]{figures/validation_plot.png}
@@ -263,18 +274,23 @@
         \label{fig:validation}
     \end{figure}
 
-    Regarding our final baseline, we obtained similar overall results for BFM as stated in "On the Difficulty of Evaluating Baselines" \cite{rendle_difficulty_2019}.
-    As can be seen in \Cref{tab:ablation}, BFM with implicit user and movie features performed better while standard BFM and BFM with only implicit user features performed worse.
-    Furthermore, adding additional features for users and movies resulted in similar performance compared to the BFM SVD++ flipped model for almost all of our proposed features.
-    However, we noticed that the distance metrics performed worse when compared to the genre clustering, hinting that with some fine-tuning of the cluster sizes, better results might be achievable.
-    Compared to that, the introduction of the Jaccard index to resemble connections between users performed similarly as well whereas the improved version of it surprisingly decreased the performance.
-    An additional experiment that we conducted, was the idea to initialize SVD with the output of a BFM SVD++ flipped predictor and perform SVD iteratively multiple times.
-    While this approach unsurprisingly performs well in regards to the better initialization of unobserved values in SVD, it did not improve upon the BFM variant.
-    As a final approach, we reformulated the problem of predicting user/movie ratings from a regression problem into a classification one which yielded a slight performance gain.
+    Regarding our final baseline, the standard BFM, we obtained similar results to~\cite{rendle_difficulty_2019}.
+%    \todo{refer to respective table or appendix}
+    As can be seen in \Cref{tab:ablation}, including both implicit user and movie features to BMF improves the score.% than standard BFM and BFM with only implicit user features.
+    Adding additional features for users and movies resulted in similar performance compared to the BFM SVD++ flipped model
+    for almost all of our proposed features.
+    However, we noticed that including the distance metrics performed worse when compared to the genre clustering.%, hinting that with some fine-tuning of the cluster sizes, better results might be achievable.
 
-    A general overview of low rank matrix approximation techniques can be observed in \Cref{fig:rank}.
-    Here, we varied the amount of singular values to keep and reported the average performance of 3-fold cross validation.
-    Furthermore, the heatmap, illustrated in \Cref{fig:Heatmap}, gives an overview on the conducted parameter search of sampling size per iteration and ranks.
+    Genre clustering with size 18 performed very similar to the BFM SVD++ flipped, which might suggest that with some hypertuning improvements are possible.
+    We leave this off to future work due to limited resources as one evaluation takes on the order of days.
+
+    Compared to that, the introduction of the Jaccard index% to resemble connections between users
+    performed similarly as well whereas the improved version of it surprisingly decreased the performance.
+    As a final approach, we reformulated the problem of predicting user/movie ratings from a regression problem into a classification one which yielded a slight performance gain (Ordered Probit).
+
+%    A general overview of low rank matrix approximation techniques can be observed in \Cref{fig:rank}.
+%    Here, we varied the amount of singular values to keep and reported the average performance of 3-fold cross validation.
+    The heatmap, illustrated in \Cref{fig:Heatmap}, gives an overview on the conducted parameter search of sampling size per iteration and ranks for the BFM SVD++ flipped.
 
     \begin{table}
         \centering
@@ -291,22 +307,22 @@
                 10*SVD               & Rank 3                                & item mean               & 0.9882                 & 0.9854                  \\
                 10*SVD               & Rank 3, Round Quarters                & item mean               & 0.9907                 &                         \\
                 10*SVD               & Rank 10                               & item mean               & 0.9941                 &                         \\
-                SVD + KernelNet      & Rank 10 | 150 Epochs                  & zero                    &                        & 0.9803                  \\
-                5*SVD + KernelNet    & Rank 10 | 150 Epochs                  & zero                    &                        & 0.9838                  \\
                 5*SVD + KernelNet    & Rank 3 | 150 Epochs                   & zero                    &                        & 0.9844                  \\
+                5*SVD + KernelNet    & Rank 10 | 150 Epochs                  & zero                    &                        & 0.9838                  \\
+                SVD + KernelNet      & Rank 10 | 150 Epochs                  & zero                    & 0.9836                 & 0.9803                  \\
                 5*SVD + BFM SVD++ f. & Rank 3 | Rank 12                      & /                       & 0.9846                 &                         \\
                 \hline
                 NMF                  & Rank 24                               & total mean              &                        & 1.0628                  \\
                 NMF                  & Rank 24                               & user mean               &                        & 1.0497                  \\
                 NMF                  & Rank 24                               & item mean               &                        & 1.0029                  \\
-                NMF*10               & Rank 24                               & item mean               &                        & 0.9946                  \\
+                10*NMF               & Rank 24                               & item mean               &                        & 0.9946                  \\
                 \hline
                 AE                   & 50 Epochs                             & total mean              &                        & 1.3382                  \\
                 AE                   & 150 Epochs                            & total mean              &                        & 1.0757                  \\
                 AE                   & 250 Epochs                            & total mean              &                        & 1.0539                  \\
                 \hline
                 NCF                  & 50 Epochs                             & /                       &                        & 1.0394                  \\
-                NCF                  & 150 Epochs                            & /                       &                        & 1.0756                 \\
+                NCF                  & 150 Epochs                            & /                       &                        & 1.0756                  \\
                 NCF                  & 250 Epochs                            & /                       &                        & 1.0845                  \\
                 \hline
                 AutoRec              & 5 Epochs                              & zero                    &                        & 1.0100                  \\
@@ -320,7 +336,7 @@
                 \hline
                 BFM                  & Rank 12                               & /                       &                        & 0.9727                  \\
                 BFM SVD++            & Rank 12                               & /                       &                        & 0.9664                  \\
-                BFM SVD++ f.         & Rank 12                               & /                       &                        & 0.9655                  \\
+                BFM SVD++ f.         & Rank 12                               & /                       & 0.9688                 & 0.9655                  \\
                 BFM SVD++ f.         & Jac. Sim., Rank 32                    & /                       & 0.9694                 &                         \\
                 BFM SVD++ f.         & Improved Jacc. Sim., Rank 32          & /                       & 0.9974                 &                         \\
                 BFM SVD++ f.         & Genre Clustering, Rank 32             & /                       & 0.9688                 &                         \\
@@ -338,14 +354,14 @@
 
     \begin{figure}
         \includegraphics[width=\columnwidth]{figures/heatmap.png}
-        \caption{Validation RMSE for different values of sample size and rank when trained on a 90/10 train/test split. Note that this parameter search has been conducted on our second best model due to the high computational burden of our best model.
+        \caption{Validation RMSE for different values of sample size and rank when trained on a 90/10 train/test split. Note that this parameter search has been conducted on our second best model, BMF SVD++ flipped, due to the high computational burden of our best model.
         A low-rank approximation of 8 to 12 with the highest sampling size performs best.}
         \label{fig:Heatmap}
     \end{figure}
 
 
     \section{Discussion}
-    As stated in the previous section, the introduction of additional hand-crafted features for users and movies did not yield any significant improvement.
+    As stated in the previous section, the introduction of additional hand-crafted features for users and movies did not yield significant improvements.
     We assume that this is mainly based on the statistical learning theory fact that one cannot gain additional information out of existing data.
     Although, the genre clustering as well as the standard Jaccard index did not perform much worse than the standard baselines, we conclude that hand-crafting features for collaborative filtering is not a direction worth exploring.
 
@@ -362,8 +378,8 @@
 
     \section{Summary}
 
-    In this paper we have examined the problem of collaborative filtering using a variety of models, such as SVD, NCF, KernelNet, NMF and autencoder networks. We exploit the Bayesian Factorization Machines improving the score of the selected baselines. Furthermore, we have enhanced Bayesian Factorization Machines with additional features that represent "movie genre" and "friend of an user" information making it more accessible and explicit. 
-    
+    In this paper we have examined the problem of collaborative filtering using a variety of models, such as SVD, NCF, KernelNet, NMF and autencoder networks. We exploit the Bayesian Factorization Machines improving the score of the selected baselines. Furthermore, we have enhanced Bayesian Factorization Machines with additional features that represent "movie genre" and "friend of an user" information making it more accessible and explicit.
+
 
 
     \balance
